@@ -1,36 +1,14 @@
-import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InputWithInfo } from "@/components/ui/input-with-info"
-import { Button } from "@/components/ui/button"
-
-interface FormData {
-  name: string
-  street: string
-  houseNumber: string
-  city: string
-}
+import { useWizard } from "@/contexts/WizardContext"
 
 export function AddressForm() {
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    street: "",
-    houseNumber: "",
-    city: "",
-  })
+  const { data, updateAddressData } = useWizard()
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    console.log("Formular abgesendet:", formData)
-    // Hier können Sie die Daten weiterverarbeiten
-  }
-
-  const handleChange = (field: keyof FormData) => (
+  const handleChange = (field: keyof typeof data.address) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }))
+    updateAddressData({ [field]: e.target.value })
   }
 
   return (
@@ -42,13 +20,13 @@ export function AddressForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
           <InputWithInfo
             id="name"
             label="Name"
             type="text"
             placeholder="Max Mustermann"
-            value={formData.name}
+            value={data.address.name}
             onChange={handleChange("name")}
             required
             infoTitle="Informationen zum Namensfeld"
@@ -62,7 +40,7 @@ export function AddressForm() {
                 label="Straße"
                 type="text"
                 placeholder="Musterstraße"
-                value={formData.street}
+                value={data.address.street}
                 onChange={handleChange("street")}
                 required
                 infoTitle="Informationen zum Straßenfeld"
@@ -75,7 +53,7 @@ export function AddressForm() {
                 label="Hausnummer"
                 type="text"
                 placeholder="123"
-                value={formData.houseNumber}
+                value={data.address.houseNumber}
                 onChange={handleChange("houseNumber")}
                 required
                 infoTitle="Informationen zur Hausnummer"
@@ -89,20 +67,13 @@ export function AddressForm() {
             label="Stadt"
             type="text"
             placeholder="Berlin"
-            value={formData.city}
+            value={data.address.city}
             onChange={handleChange("city")}
             required
             infoTitle="Informationen zum Stadtfeld"
             infoDescription="Geben Sie hier den Namen Ihrer Stadt oder Gemeinde ein. Verwenden Sie bitte den offiziellen Namen der Stadt. Falls Sie in einem Ortsteil wohnen, können Sie diesen nach dem Stadtnamen durch ein Komma getrennt angeben (z.B. 'Berlin, Charlottenburg'). Bei kleineren Orten genügt der Ortsname."
           />
-
-          <Button
-            type="submit"
-            className="w-full mt-6 hover:scale-105 transition-transform"
-          >
-            Absenden
-          </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   )

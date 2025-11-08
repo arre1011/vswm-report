@@ -1,67 +1,37 @@
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InputWithInfo } from "@/components/ui/input-with-info"
-import { Button } from "@/components/ui/button"
-
-interface EmailFormData {
-  email: string
-  confirmEmail: string
-}
+import { useWizard } from "@/contexts/WizardContext"
 
 export function EmailForm() {
-  const [formData, setFormData] = useState<EmailFormData>({
-    email: "",
-    confirmEmail: "",
-  })
-
-  const [errors, setErrors] = useState<Partial<EmailFormData>>({})
+  const { data, updateEmailData } = useWizard()
+  const [errors, setErrors] = useState<{ email?: string; confirmEmail?: string }>({})
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return emailRegex.test(email)
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const newErrors: Partial<EmailFormData> = {}
-
-    // E-Mail-Validierung
-    if (!formData.email) {
-      newErrors.email = "E-Mail-Adresse ist erforderlich"
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = "Bitte geben Sie eine gültige E-Mail-Adresse ein"
-    }
-
-    // Bestätigungs-E-Mail-Validierung
-    if (!formData.confirmEmail) {
-      newErrors.confirmEmail = "Bitte bestätigen Sie Ihre E-Mail-Adresse"
-    } else if (formData.email !== formData.confirmEmail) {
-      newErrors.confirmEmail = "Die E-Mail-Adressen stimmen nicht überein"
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-
-    setErrors({})
-    console.log("E-Mail-Formular abgesendet:", formData)
-    // Hier können Sie die Daten weiterverarbeiten
-  }
-
-  const handleChange = (field: keyof EmailFormData) => (
+  const handleChange = (field: "email" | "confirmEmail") => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: e.target.value,
-    }))
-    // Fehler beim Tippen zurücksetzen
-    if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: undefined,
-      }))
+    updateEmailData({ [field]: e.target.value })
+    
+    // Validierung beim Tippen
+    if (field === "email" && e.target.value) {
+      if (!validateEmail(e.target.value)) {
+        setErrors((prev) => ({ ...prev, email: "Ungültige E-Mail-Adresse" }))
+      } else {
+        setErrors((prev) => ({ ...prev, email: undefined }))
+      }
+    }
+    
+    if (field === "confirmEmail" && e.target.value) {
+      if (data.email && e.target.value !== data.email) {
+        setErrors((prev) => ({ ...prev, confirmEmail: "E-Mail-Adressen stimmen nicht überein" }))
+      } else {
+        setErrors((prev) => ({ ...prev, confirmEmail: undefined }))
+      }
     }
   }
 
@@ -74,13 +44,13 @@ export function EmailForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
           <InputWithInfo
             id="email"
             label="E-Mail-Adresse"
             type="email"
             placeholder="max.mustermann@example.com"
-            value={formData.email}
+            value={data.email.email}
             onChange={handleChange("email")}
             required
             infoTitle="Informationen zum E-Mail-Feld"
@@ -99,7 +69,7 @@ export function EmailForm() {
             label="E-Mail-Adresse bestätigen"
             type="email"
             placeholder="max.mustermann@example.com"
-            value={formData.confirmEmail}
+            value={data.email.confirmEmail}
             onChange={handleChange("confirmEmail")}
             required
             infoTitle="Informationen zur E-Mail-Bestätigung"
@@ -112,14 +82,7 @@ export function EmailForm() {
               {errors.confirmEmail}
             </p>
           )}
-
-          <Button
-            type="submit"
-            className="w-full mt-6 hover:scale-105 transition-transform"
-          >
-            Absenden
-          </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   )

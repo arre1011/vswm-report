@@ -37,4 +37,3 @@ Weitere Informationen finden Sie im `frontend/README.md`.
 ## Lizenz
 
 [Ihre Lizenz hier]
-

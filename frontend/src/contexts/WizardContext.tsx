@@ -14,6 +14,7 @@ export interface EmailData {
 
 export interface PersonalData {
   currency: "EUR" | "USD" | "GBP" | "JPY"
+  dateOfBirth?: Date
 }
 
 export interface WizardData {
@@ -51,6 +52,7 @@ const initialData: WizardData = {
   },
   personal: {
     currency: "EUR",
+    dateOfBirth: undefined,
   },
 }
 
@@ -118,7 +120,15 @@ export function WizardProvider({ children }: { children: ReactNode }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          personal: {
+            ...data.personal,
+            dateOfBirth: data.personal.dateOfBirth
+              ? data.personal.dateOfBirth.toISOString().split("T")[0]
+              : null,
+          },
+        }),
       })
 
       if (!response.ok) {

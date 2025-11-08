@@ -27,7 +27,7 @@ export function EmailForm() {
     }
     
     if (field === "confirmEmail" && e.target.value) {
-      if (data.email && e.target.value !== data.email) {
+      if (data.email.email && e.target.value !== data.email.email) {
         setErrors((prev) => ({ ...prev, confirmEmail: "E-Mail-Adressen stimmen nicht überein" }))
       } else {
         setErrors((prev) => ({ ...prev, confirmEmail: undefined }))

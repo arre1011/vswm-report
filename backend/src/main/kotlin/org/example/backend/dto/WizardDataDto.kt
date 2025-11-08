@@ -15,7 +15,8 @@ data class EmailDataDto(
 )
 
 data class PersonalDataDto(
-    @JsonProperty("currency") val currency: String // EUR, USD, GBP, JPY
+    @JsonProperty("currency") val currency: String, // EUR, USD, GBP, JPY
+    @JsonProperty("dateOfBirth") val dateOfBirth: String? // ISO Date string (YYYY-MM-DD)
 )
 
 data class WizardDataDto(

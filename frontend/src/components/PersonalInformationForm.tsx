@@ -1,49 +1,58 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { DatePickerWithInfo } from "@/components/ui/date-picker-with-info"
+import { SelectWithInfo } from "@/components/ui/select-with-info"
 import { useWizard } from "@/contexts/WizardContext"
 
 export function PersonalInformationForm() {
   const { data, updatePersonalData } = useWizard()
+
+  const isDateDisabled = (date: Date) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    // Disable future dates
+    return date > today
+  }
+
+  const currencyOptions = [
+    { value: "EUR", label: "EUR - Euro" },
+    { value: "USD", label: "USD - US Dollar" },
+    { value: "GBP", label: "GBP - Britisches Pfund" },
+    { value: "JPY", label: "JPY - Japanischer Yen" },
+  ]
 
   return (
     <Card className="w-full max-w-2xl mx-auto shadow-lg">
       <CardHeader>
         <CardTitle>Persönliche Informationen</CardTitle>
         <CardDescription>
-          Bitte wählen Sie Ihre bevorzugte Währung aus.
+          Bitte geben Sie Ihre persönlichen Informationen ein.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="currency">Währung</Label>
-            <Select
-              value={data.personal.currency}
-              onValueChange={(value: "EUR" | "USD" | "GBP" | "JPY") =>
-                updatePersonalData({ currency: value })
-              }
-            >
-              <SelectTrigger id="currency" className="w-full">
-                <SelectValue placeholder="Währung auswählen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="GBP">GBP - Britisches Pfund</SelectItem>
-                <SelectItem value="JPY">JPY - Japanischer Yen</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              Diese Währung wird für alle Transaktionen verwendet.
-            </p>
-          </div>
+          <DatePickerWithInfo
+            id="dateOfBirth"
+            label="Geburtsdatum"
+            date={data.personal.dateOfBirth}
+            onDateChange={(date) => updatePersonalData({ dateOfBirth: date })}
+            placeholder="Geburtsdatum auswählen"
+            disabled={isDateDisabled}
+            infoTitle="Informationen zum Geburtsdatum"
+            infoDescription="Bitte wählen Sie Ihr Geburtsdatum aus. Zukünftige Daten können nicht ausgewählt werden. Das Geburtsdatum wird für die Verifizierung Ihrer Identität verwendet und muss mit Ihrem offiziellen Ausweisdokument übereinstimmen."
+          />
+
+          <SelectWithInfo
+            id="currency"
+            label="Währung"
+            value={data.personal.currency}
+            onValueChange={(value) =>
+              updatePersonalData({ currency: value as "EUR" | "USD" | "GBP" | "JPY" })
+            }
+            options={currencyOptions}
+            placeholder="Währung auswählen"
+            infoTitle="Informationen zur Währung"
+            infoDescription="Wählen Sie Ihre bevorzugte Währung aus. Diese Währung wird für alle Transaktionen und Berechnungen in Ihrem Konto verwendet. Sie können die Währung später in den Einstellungen ändern. Verfügbare Währungen: EUR (Euro), USD (US Dollar), GBP (Britisches Pfund), JPY (Japanischer Yen)."
+          />
         </div>
       </CardContent>
     </Card>

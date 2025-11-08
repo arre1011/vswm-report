@@ -1,4 +1,6 @@
 import { useState } from "react"
+import { format } from "date-fns"
+import { de } from "date-fns/locale"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useWizard } from "@/contexts/WizardContext"
@@ -76,7 +78,13 @@ export function ConfirmationStep() {
           {/* Persönliche Daten */}
           <div className="space-y-2">
             <h4 className="font-semibold text-lg">Persönliche Informationen</h4>
-            <div className="bg-muted/50 p-4 rounded-md">
+            <div className="bg-muted/50 p-4 rounded-md space-y-2">
+              <p>
+                <span className="font-medium">Geburtsdatum:</span>{" "}
+                {data.personal.dateOfBirth
+                  ? format(data.personal.dateOfBirth, "dd.MM.yyyy", { locale: de })
+                  : "-"}
+              </p>
               <p>
                 <span className="font-medium">Währung:</span> {data.personal.currency}
               </p>

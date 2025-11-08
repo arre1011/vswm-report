@@ -1,4 +1,5 @@
 import { AddressForm } from "@/components/AddressForm"
+import { EmailForm } from "@/components/EmailForm"
 
 function App() {
   return (
@@ -12,7 +13,10 @@ function App() {
             Willkommen zu Ihrem VSME Report Projekt
           </p>
         </div>
-        <AddressForm />
+        <div className="space-y-8">
+          <AddressForm />
+          <EmailForm />
+        </div>
       </div>
     </div>
   )

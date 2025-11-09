@@ -1,0 +1,93 @@
+name: backend-appservice
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-appservice.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-appservice.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      JAVA_VERSION: ${{ vars.BACKEND_JAVA_VERSION || '17' }}
+      BACKEND_BUILD_COMMAND: ${{ vars.BACKEND_BUILD_COMMAND || './mvnw -B -DskipTests package' }}
+      BACKEND_WORKING_DIRECTORY: ${{ vars.BACKEND_WORKING_DIRECTORY || 'backend' }}
+      BACKEND_ARTIFACT_PATH: ${{ vars.BACKEND_ARTIFACT_PATH || 'backend/target/*.jar' }}
+      AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      HEALTHCHECK_PATH: ${{ vars.BACKEND_HEALTHCHECK_PATH || '/' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Build backend
+        working-directory: ${{ env.BACKEND_WORKING_DIRECTORY }}
+        run: $BACKEND_BUILD_COMMAND
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve artifact
+        id: artifact
+        run: |
+          ARTIFACT=$(ls -1 $BACKEND_ARTIFACT_PATH | head -n 1)
+          if [ -z "$ARTIFACT" ]; then
+            echo "No artifact found for pattern $BACKEND_ARTIFACT_PATH"
+            exit 1
+          fi
+          echo "path=$ARTIFACT" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy JAR to Azure App Service
+        run: |
+          if [ -z "$AZURE_WEBAPP_NAME" ] || [ -z "$AZURE_RESOURCE_GROUP" ]; then
+            echo "Missing AZURE_WEBAPP_NAME or AZURE_RESOURCE_GROUP vars."
+            exit 1
+          fi
+
+          az webapp deploy \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --type jar \
+            --src-path "${{ steps.artifact.outputs.path }}"
+
+      - name: Output App Service hostname
+        run: |
+          HOSTNAME=$(az webapp show \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "defaultHostName" \
+            -o tsv)
+          echo "https://$HOSTNAME"
+
+      - name: Health check
+        run: |
+          HOSTNAME=$(az webapp show \
+            --name "$AZURE_WEBAPP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --query "defaultHostName" \
+            -o tsv)
+          curl -fsSL "https://$HOSTNAME${HEALTHCHECK_PATH}"
+

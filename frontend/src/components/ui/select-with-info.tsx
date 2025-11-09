@@ -70,7 +70,7 @@ export function SelectWithInfo({
           </DialogContent>
         </Dialog>
       </div>
-      <Select value={value} onValueChange={onValueChange}>
+      <Select value={value || undefined} onValueChange={onValueChange}>
         <SelectTrigger id={id} className={selectClassName}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

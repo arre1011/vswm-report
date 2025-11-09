@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { AddressForm } from "@/components/AddressForm"
-import { EmailForm } from "@/components/EmailForm"
-import { PersonalInformationForm } from "@/components/PersonalInformationForm"
 import { ConfirmationStep } from "@/components/ConfirmationStep"
+import { GeneralInformationForm } from "@/components/forms/GeneralInformationForm"
+import { EnvironmentalDisclosuresForm } from "@/components/forms/EnvironmentalDisclosuresForm"
+import { SocialDisclosuresForm } from "@/components/forms/SocialDisclosuresForm"
+import { GovernanceDisclosuresForm } from "@/components/forms/GovernanceDisclosuresForm"
 import { useWizard } from "@/contexts/WizardContext"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -11,23 +12,24 @@ export function Wizard() {
   const { currentStep, totalSteps, nextStep, previousStep } = useWizard()
 
   const steps = [
-    { number: 1, title: "Adresse & E-Mail", description: "Grundinformationen" },
-    { number: 2, title: "Persönliche Daten", description: "Währung & Einstellungen" },
-    { number: 3, title: "Bestätigung", description: "Überprüfung & Absenden" },
+    { number: 1, title: "General Information", description: "Stammdaten & B1" },
+    { number: 2, title: "Environmental Disclosures", description: "B3 / C3 Klima & Energie" },
+    { number: 3, title: "Social Disclosures", description: "B8 – B10 Workforce" },
+    { number: 4, title: "Governance Disclosures", description: "B11 / C8 – C9 Governance" },
+    { number: 5, title: "Review & Submit", description: "Überprüfung & Absenden" },
   ]
 
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return (
-          <div className="space-y-8">
-            <AddressForm />
-            <EmailForm />
-          </div>
-        )
+        return <GeneralInformationForm />
       case 2:
-        return <PersonalInformationForm />
+        return <EnvironmentalDisclosuresForm />
       case 3:
+        return <SocialDisclosuresForm />
+      case 4:
+        return <GovernanceDisclosuresForm />
+      case 5:
         return <ConfirmationStep />
       default:
         return null
@@ -35,7 +37,7 @@ export function Wizard() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto">
       {/* Stepper */}
       <Card className="mb-8">
         <CardContent className="pt-6">
@@ -55,9 +57,7 @@ export function Wizard() {
                   <div className="mt-2 text-center">
                     <p
                       className={`text-sm font-medium ${
-                        currentStep >= step.number
-                          ? "text-foreground"
-                          : "text-muted-foreground"
+                        currentStep >= step.number ? "text-foreground" : "text-muted-foreground"
                       }`}
                     >
                       {step.title}
@@ -79,7 +79,7 @@ export function Wizard() {
       </Card>
 
       {/* Step Content */}
-      <div className="mb-8">{renderStep()}</div>
+      <div className="mb-8 space-y-8">{renderStep()}</div>
 
       {/* Navigation */}
       <Card>

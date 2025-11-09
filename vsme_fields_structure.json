@@ -1,0 +1,623 @@
+{
+  "General Information": [
+    {
+      "sheet": "General Information",
+      "row": 2,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Information on the report necessary for  XBRL [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "General Information",
+      "row": 31,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B1 - Basis for Preparation and other undertaking's general information from - to - [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "General Information",
+      "row": 67,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B1 - List of subsidiaries from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Name"
+      ]
+    },
+    {
+      "sheet": "General Information",
+      "row": 96,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B1 - Disclosure of sustainability-related certification(s) or label(s) from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Address"
+      ]
+    },
+    {
+      "sheet": "General Information",
+      "row": 102,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B1 - List of site(s) from - to - [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Address"
+      ]
+    },
+    {
+      "sheet": "General Information",
+      "row": 135,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B2 – Practices policies and future initiatives for transitioning towards a more sustainable economy from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Climate change"
+      ]
+    },
+    {
+      "sheet": "General Information",
+      "row": 142,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B2 - Cooperative specific disclosures from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "General Information",
+      "row": 148,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C2 – Description of practices policies and future initiatives for transitioning towards a more sustainable economy from - to - [If applicable linked with B2]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "General Information",
+      "row": 154,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C1 – Strategy: Business Model and Sustainability – Related Initiatives from - to - [Always to be reported]",
+      "field_type": "number",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "General Information",
+      "row": 159,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C1 – Strategy: Business Model and Sustainability – Related Initiatives from - to - [If applicable]",
+      "field_type": "number",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    }
+  ],
+  "Environmental Disclosures": [
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 2,
+      "disclosure_code": "B3",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B3 - Total Energy Consumption (in MWh) from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 7,
+      "disclosure_code": "B3",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B3 - Breakdown of energy consumption (in MWh) from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Current Reporting Period",
+        "-  -  -"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 16,
+      "disclosure_code": "B3",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B3 - Estimated Greenhouse Gas Emissions considering the GHG Protocol Version 2004 (in tCO2e) [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [
+        {
+          "col": 7,
+          "value": "C3 - GHG reduction targets (in tC02e) [If applicable]"
+        }
+      ],
+      "options": [
+        "Current Reporting Period",
+        "-  -  -"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 49,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C3 - Disclosure of list of main actions the entity seeks in order to achieve its targets from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Year",
+        "Month",
+        "Day"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 55,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C3 - Transition plan for undertakings operating in high climate impact sectors from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Year",
+        "Month",
+        "Day"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 64,
+      "disclosure_code": "B3",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B3 - Greenhouse gas emission intensity per turnover (in tCO2e) from - to - [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 71,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B4 – Pollution of air water and soil from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Pollutant"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 121,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B5 - Sites in biodiversity sensitive areas from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 127,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Related Site ID (select an ID from a site location reported in B1)",
+      "field_type": "text",
+      "required": false,
+      "optional": false,
+      "data_cells": [
+        {
+          "col": 4,
+          "value": "Site Location in near a biodiversity area - auto filled from B1"
+        },
+        {
+          "col": 7,
+          "value": "Area (hectares or m² based on the selection above)"
+        }
+      ],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 166,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B6 - Water Withdrawal from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 172,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B6 - Water Consumption from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 179,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B7 - Description of circular economy principles from - to - [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Type of waste"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 185,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B7 - Waste generated from - to - [Always to be reported]",
+      "field_type": "number",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Type of waste"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 211,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B7 – Annual mass-flow of relevant materials used from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": [
+        "Name of the key material"
+      ]
+    },
+    {
+      "sheet": "Environmental Disclosures",
+      "row": 234,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C4 – Climate risks from - to - [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    }
+  ],
+  "Social Disclosures": [
+    {
+      "sheet": "Social Disclosures",
+      "row": 2,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Employee counting methodology for the disclosures below (Headcount or Full time Equivalent linked from B1",
+      "field_type": "boolean",
+      "required": false,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Number of employees"
+      ]
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 3,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Employee counting methodology for the disclosures below (At the end of the reporting period or as an average across the reporting period linked from B1)",
+      "field_type": "boolean",
+      "required": false,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Number of employees"
+      ]
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 6,
+      "disclosure_code": "B8",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B8 – Workforce – General characteristics - Type of contract [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Number of employees"
+      ]
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 12,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Total employees (linked to B1)",
+      "field_type": "url",
+      "required": false,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Number of employees"
+      ]
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 14,
+      "disclosure_code": "B8",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B8 – Workforce – General characteristics - Gender [Always to be reported]",
+      "field_type": "boolean",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": [
+        "Number of employees"
+      ]
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 22,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Total employees (linked to B1)",
+      "field_type": "url",
+      "required": false,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 24,
+      "disclosure_code": "B8",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B8 – Workforce – General characteristics - Country of employment [If applicable]",
+      "field_type": "boolean",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 39,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Total employees (linked to B1)",
+      "field_type": "url",
+      "required": false,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 41,
+      "disclosure_code": "B8",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B8 – Workforce – General characteristics - Turnover rate from - to - [If applicable]",
+      "field_type": "number",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 49,
+      "disclosure_code": "B9",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B9 – Workforce – Health and safety from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 56,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B10 – Workforce – Remuneration collective bargaining and training from - to - [Always to be reported + If applicable]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 64,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "Number of annual training hours per employee during the reporting period from - to - [Always to be reported]",
+      "field_type": "number",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 81,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C6 – Additional own workforce information - Human rights policies and processes from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Social Disclosures",
+      "row": 93,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C7 – Severe negative human rights incidents from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    }
+  ],
+  "Governance Disclosures": [
+    {
+      "sheet": "Governance Disclosures",
+      "row": 2,
+      "disclosure_code": "B1",
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "B11 – Convictions and fines for corruption and bribery from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Governance Disclosures",
+      "row": 9,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C8 – Revenues from certain activities from - to - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Governance Disclosures",
+      "row": 20,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C8 – Exclusion from EU reference benchmarks from - to - [Always to be reported]",
+      "field_type": "text",
+      "required": true,
+      "optional": false,
+      "data_cells": [],
+      "options": null
+    },
+    {
+      "sheet": "Governance Disclosures",
+      "row": 29,
+      "disclosure_code": null,
+      "paragraph_reference": null,
+      "guidance_reference": null,
+      "label": "C9 – Gender diversity ratio in the governance body at - [If applicable]",
+      "field_type": "text",
+      "required": false,
+      "optional": true,
+      "data_cells": [],
+      "options": null
+    }
+  ]
+}

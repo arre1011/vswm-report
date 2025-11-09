@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InputWithInfo } from "@/components/ui/input-with-info"
 import { SelectWithInfo } from "@/components/ui/select-with-info"
-import { useWizard } from "@/contexts/WizardContext"
+import { useWizard } from "@/stores/WizardStore"
 import { ChangeEvent } from "react"
 
 const yesNoOptions = [

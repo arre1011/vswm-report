@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react"
+import { create, StoreApi } from "zustand"
 
 export type BasisModuleOption = "" | "Basic" | "Basic & Comprehensive"
 export type ReportingBasisOption = "" | "Consolidated" | "Individual"
@@ -60,7 +60,7 @@ export interface WizardData {
   governanceDisclosures: GovernanceDisclosuresData
 }
 
-interface WizardContextType {
+interface WizardState {
   data: WizardData
   currentStep: number
   totalSteps: number
@@ -77,7 +77,9 @@ interface WizardContextType {
   submitError: string | null
 }
 
-const initialData: WizardData = {
+const TOTAL_STEPS = 5
+
+const createInitialWizardData = (): WizardData => ({
   generalInformation: {
     entityName: "",
     entityIdentifier: "",
@@ -119,76 +121,66 @@ const initialData: WizardData = {
     femaleBoardMembers: "",
     maleBoardMembers: "",
   },
-}
+})
 
-const WizardContext = createContext<WizardContextType | undefined>(undefined)
+type WizardStoreSet = StoreApi<WizardState>["setState"]
+type WizardStoreGet = StoreApi<WizardState>["getState"]
 
-export function WizardProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<WizardData>(initialData)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const totalSteps = 5
-
-  const updateGeneralInformation = (newData: Partial<GeneralInformationData>) => {
-    setData((prev) => ({
-      ...prev,
-      generalInformation: { ...prev.generalInformation, ...newData },
-    }))
-  }
-
-  const updateEnvironmentalDisclosures = (
-    newData: Partial<EnvironmentalDisclosuresData>,
-  ) => {
-    setData((prev) => ({
-      ...prev,
-      environmentalDisclosures: { ...prev.environmentalDisclosures, ...newData },
-    }))
-  }
-
-  const updateSocialDisclosures = (newData: Partial<SocialDisclosuresData>) => {
-    setData((prev) => ({
-      ...prev,
-      socialDisclosures: { ...prev.socialDisclosures, ...newData },
-    }))
-  }
-
-  const updateGovernanceDisclosures = (
-    newData: Partial<GovernanceDisclosuresData>,
-  ) => {
-    setData((prev) => ({
-      ...prev,
-      governanceDisclosures: { ...prev.governanceDisclosures, ...newData },
-    }))
-  }
-
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1)
-    }
-  }
-
-  const previousStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1)
-    }
-  }
-
-  const goToStep = (step: number) => {
-    if (step >= 1 && step <= totalSteps) {
-      setCurrentStep(step)
-    }
-  }
-
-  const resetWizard = () => {
-    setData(initialData)
-    setCurrentStep(1)
-    setSubmitError(null)
-  }
-
-  const submitData = async () => {
-    setIsSubmitting(true)
-    setSubmitError(null)
+const createWizardStore = (set: WizardStoreSet, get: WizardStoreGet): WizardState => ({
+  data: createInitialWizardData(),
+  currentStep: 1,
+  totalSteps: TOTAL_STEPS,
+  isSubmitting: false,
+  submitError: null,
+  updateGeneralInformation: (newData: Partial<GeneralInformationData>) =>
+    set((state: WizardState) => ({
+      data: {
+        ...state.data,
+        generalInformation: { ...state.data.generalInformation, ...newData },
+      },
+    })),
+  updateEnvironmentalDisclosures: (newData: Partial<EnvironmentalDisclosuresData>) =>
+    set((state: WizardState) => ({
+      data: {
+        ...state.data,
+        environmentalDisclosures: { ...state.data.environmentalDisclosures, ...newData },
+      },
+    })),
+  updateSocialDisclosures: (newData: Partial<SocialDisclosuresData>) =>
+    set((state: WizardState) => ({
+      data: {
+        ...state.data,
+        socialDisclosures: { ...state.data.socialDisclosures, ...newData },
+      },
+    })),
+  updateGovernanceDisclosures: (newData: Partial<GovernanceDisclosuresData>) =>
+    set((state: WizardState) => ({
+      data: {
+        ...state.data,
+        governanceDisclosures: { ...state.data.governanceDisclosures, ...newData },
+      },
+    })),
+  nextStep: () =>
+    set((state: WizardState) =>
+      state.currentStep < state.totalSteps ? { currentStep: state.currentStep + 1 } : state,
+    ),
+  previousStep: () =>
+    set((state: WizardState) =>
+      state.currentStep > 1 ? { currentStep: state.currentStep - 1 } : state,
+    ),
+  goToStep: (step: number) =>
+    set((state: WizardState) =>
+      step >= 1 && step <= state.totalSteps ? { currentStep: step } : state,
+    ),
+  resetWizard: () =>
+    set({
+      data: createInitialWizardData(),
+      currentStep: 1,
+      submitError: null,
+    }),
+  submitData: async () => {
+    set({ isSubmitting: true, submitError: null })
+    const { data } = get()
 
     try {
       const response = await fetch("http://localhost:8080/api/submit", {
@@ -241,42 +233,13 @@ export function WizardProvider({ children }: { children: ReactNode }) {
         errorMessage = error.message
       }
 
-      setSubmitError(errorMessage)
+      set({ submitError: errorMessage })
       throw error
     } finally {
-      setIsSubmitting(false)
+      set({ isSubmitting: false })
     }
-  }
+  },
+})
 
-  return (
-    <WizardContext.Provider
-      value={{
-        data,
-        currentStep,
-        totalSteps,
-        updateGeneralInformation,
-        updateEnvironmentalDisclosures,
-        updateSocialDisclosures,
-        updateGovernanceDisclosures,
-        nextStep,
-        previousStep,
-        goToStep,
-        resetWizard,
-        submitData,
-        isSubmitting,
-        submitError,
-      }}
-    >
-      {children}
-    </WizardContext.Provider>
-  )
-}
-
-export function useWizard() {
-  const context = useContext(WizardContext)
-  if (context === undefined) {
-    throw new Error("useWizard must be used within a WizardProvider")
-  }
-  return context
-}
+export const useWizard = create<WizardState>(createWizardStore)
 

@@ -5,7 +5,7 @@ import { GeneralInformationForm } from "@/components/forms/GeneralInformationFor
 import { EnvironmentalDisclosuresForm } from "@/components/forms/EnvironmentalDisclosuresForm"
 import { SocialDisclosuresForm } from "@/components/forms/SocialDisclosuresForm"
 import { GovernanceDisclosuresForm } from "@/components/forms/GovernanceDisclosuresForm"
-import { useWizard } from "@/contexts/WizardContext"
+import { useWizard } from "@/stores/WizardStore"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 export function Wizard() {

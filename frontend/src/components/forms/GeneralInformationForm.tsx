@@ -7,7 +7,7 @@ import {
   BasisModuleOption,
   ReportingBasisOption,
   EmployeeCountingMethod,
-} from "@/contexts/WizardContext"
+} from "@/stores/WizardStore"
 import { ChangeEvent } from "react"
 
 const currencyOptions = [

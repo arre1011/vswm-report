@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InputWithInfo } from "@/components/ui/input-with-info"
 import { SelectWithInfo } from "@/components/ui/select-with-info"
-import { useWizard, EmployeeCountingMethod } from "@/contexts/WizardContext"
+import { useWizard, EmployeeCountingMethod } from "@/stores/WizardStore"
 import { ChangeEvent } from "react"
 
 const employeeMethodOptions: Array<{ value: EmployeeCountingMethod; label: string }> = [

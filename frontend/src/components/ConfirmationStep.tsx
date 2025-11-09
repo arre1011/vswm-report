@@ -3,7 +3,7 @@ import { format } from "date-fns"
 import { de } from "date-fns/locale"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useWizard } from "@/contexts/WizardContext"
+import { useWizard } from "@/stores/WizardStore"
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react"
 
 export function ConfirmationStep() {

@@ -1,11 +1,16 @@
+/*
+  ℹ️ Variables = Stellschrauben deiner Infrastruktur.
+  Du kannst sie in terraform.tfvars, via CLI oder über CI setzen.
+*/
+
 variable "project_name" {
-  description = "Base name for Azure resources."
+  description = "Basisname für alle Azure-Ressourcen – wird in Kombination mit der Umgebung genutzt."
   type        = string
   default     = "vsme-report"
 }
 
 variable "environment" {
-  description = "Deployment environment (e.g. dev, prod)."
+  description = "Umgebung (z. B. dev, prod). Dient vor allem zur Namensgebung."
   type        = string
   default     = "dev"
 }
@@ -17,7 +22,7 @@ variable "location" {
 }
 
 variable "tags" {
-  description = "Common tags applied to all resources."
+  description = "Zusätzliche Tags, die auf jede Ressource geschrieben werden."
   type        = map(string)
   default = {
     managed-by = "terraform"
@@ -25,31 +30,31 @@ variable "tags" {
 }
 
 variable "swa_sku_tier" {
-  description = "SKU tier for Azure Static Web App."
+  description = "Azure Static Web App SKU (Standard ermöglicht benutzerdefinierte Domains & Staging)."
   type        = string
   default     = "Standard"
 }
 
 variable "swa_sku_size" {
-  description = "SKU size for Azure Static Web App."
+  description = "Azure Static Web App Größe (in der Regel wie der Tier-Wert)."
   type        = string
   default     = "Standard"
 }
 
 variable "app_service_sku_name" {
-  description = "App Service Plan SKU name (must support Always On)."
+  description = "App Service Plan SKU Name (P1v2 = Produktionstauglich, Always On)."
   type        = string
   default     = "P1v2"
 }
 
 variable "app_service_linux_fx_version" {
-  description = "Linux runtime stack for the App Service (e.g. JAVA|17, JAVA|11)."
+  description = "Linux Runtime Stack für den App Service, Format <STACK>|<VERSION>."
   type        = string
   default     = "JAVA|17"
 }
 
 variable "app_settings" {
-  description = "Additional app settings to merge into the App Service configuration."
+  description = "Optionale zusätzliche App Settings, die in den App Service übernommen werden."
   type        = map(string)
   default     = {}
 }

@@ -3,7 +3,10 @@ terraform {
 
   backend "azurerm" {
     /*
-      Configure the remote backend via terraform init, e.g.:
+      🧠 Terraform speichert den Infrastruktur-Zustand zentral in einem Azure Storage
+      Account. Die exakten Parameter (Resource Group, Storage Account, Container, Key)
+      setzt du beim `terraform init` – das bleibt hier absichtlich leer, damit keine
+      sensiblen Informationen eingecheckt werden.
 
       terraform init \
         -backend-config="resource_group_name=rg-terraform" \
@@ -28,6 +31,6 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
+  features {} # Standard-Features aktivieren den Provider; keine zusätzliche Konfiguration nötig.
 }
 

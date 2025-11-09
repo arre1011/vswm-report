@@ -32,6 +32,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # 👆 Lädt den aktuellen Repository-Stand in den Runner.
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -39,11 +40,13 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        # 👆 Authentifiziert den Workflow gegen Azure ohne Secrets (OpenID Connect).
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.8.5
+        # 👆 Installiert Terraform in der gewünschten Version.
 
       - name: Terraform Init
         run: |
@@ -52,14 +55,18 @@ jobs:
             -backend-config="storage_account_name=${TFSTATE_STORAGE_ACCOUNT}" \
             -backend-config="container_name=${TFSTATE_CONTAINER}" \
             -backend-config="key=${TFSTATE_KEY}"
+        # 👆 Initialisiert Terraform und verbindet mit dem Remote State Backend.
 
       - name: Terraform Validate
         run: terraform validate
+        # 👆 Statische Prüfung: Sind die .tf Dateien syntaktisch korrekt?
 
       - name: Terraform Plan
         run: terraform plan -input=false -out=tfplan
+        # 👆 Berechnet, welche Änderungen nötig wären, speichert Ergebnis als tfplan.
 
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false -auto-approve tfplan
+        # 👆 Führt die Änderungen nur auf main-Pushes automatisch aus.
 

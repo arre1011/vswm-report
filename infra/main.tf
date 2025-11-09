@@ -1,4 +1,9 @@
 locals {
+  /*
+    🔤 Lokale Hilfswerte:
+    - base_name: Grundgerüst für Ressourcennamen (z. B. vsme-report-dev)
+    - tags: vereinheitlichte Tags für Monitoring/Abrechnung
+  */
   base_name      = "${var.project_name}-${var.environment}"
   resource_group = "${local.base_name}-rg"
   tags = merge(
@@ -11,6 +16,7 @@ locals {
 }
 
 resource "random_string" "global_suffix" {
+  # Viele Azure-Ressourcen (z. B. Static Web App) brauchen eindeutige Namen – der Suffix verhindert Kollisionen.
   length  = 5
   upper   = false
   lower   = true
@@ -19,12 +25,14 @@ resource "random_string" "global_suffix" {
 }
 
 resource "azurerm_resource_group" "main" {
+  # Zentraler Container für alle Ressourcen dieser Umgebung.
   name     = local.resource_group
   location = var.location
   tags     = local.tags
 }
 
 resource "azurerm_application_insights" "backend" {
+  # Monitoring-Instanz für das Backend (Requests, Logs, Abhängigkeiten).
   name                = "${replace(local.base_name, "-", "")}-appi-${random_string.global_suffix.result}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -34,6 +42,7 @@ resource "azurerm_application_insights" "backend" {
 }
 
 resource "azurerm_static_site" "frontend" {
+  # Azure Static Web App für das React-Frontend – Build & Deploy via GitHub Actions.
   name                = "${replace(local.base_name, "-", "")}-swa-${random_string.global_suffix.result}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
@@ -45,6 +54,7 @@ resource "azurerm_static_site" "frontend" {
 }
 
 resource "azurerm_service_plan" "backend" {
+  # App Service Plan (Linux). Hier laufen ein oder mehrere Web Apps mit gemeinsamem Compute.
   name                = "${local.base_name}-plan"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -55,6 +65,7 @@ resource "azurerm_service_plan" "backend" {
 }
 
 resource "azurerm_linux_web_app" "backend" {
+  # Das eigentliche Spring-Boot Backend, Always On, mit Application Insights verkabelt.
   name                = "${local.base_name}-app"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
@@ -74,6 +85,7 @@ resource "azurerm_linux_web_app" "backend" {
 
   app_settings = merge(
     {
+      # Die wichtigsten Einstellungen: Deployment-Methodik & Application Insights Agent.
       "WEBSITE_RUN_FROM_PACKAGE"                = "1"
       "SCM_DO_BUILD_DURING_DEPLOYMENT"          = "false"
       "APPLICATIONINSIGHTS_CONNECTION_STRING"   = azurerm_application_insights.backend.connection_string
@@ -87,6 +99,7 @@ resource "azurerm_linux_web_app" "backend" {
   )
 
   logs {
+    # Aktiviert serverseitige Logs – hilfreich beim Debugging.
     application_logs {
       file_system_level = "Error"
     }

@@ -30,7 +30,7 @@ jobs:
       HEALTHCHECK_PATH: ${{ vars.BACKEND_HEALTHCHECK_PATH || '/' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Repo-Code herunterladen
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -38,10 +38,12 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+        # Installiert die gewünschte Java-Version und cacht Maven-Dependencies.
 
       - name: Build backend
         working-directory: ${{ env.BACKEND_WORKING_DIRECTORY }}
         run: $BACKEND_BUILD_COMMAND
+        # Baut das Spring Boot Projekt (Standardkommando lässt Tests weg, anpassbar via Repo-Var).
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -49,6 +51,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        # Anmelden an Azure ohne fest hinterlegte Passwörter (OIDC).
 
       - name: Resolve artifact
         id: artifact
@@ -59,6 +62,7 @@ jobs:
             exit 1
           fi
           echo "path=$ARTIFACT" >> "$GITHUB_OUTPUT"
+        # Sucht sich das erste gebaute JAR und speichert den Pfad für spätere Schritte.
 
       - name: Deploy JAR to Azure App Service
         run: |
@@ -72,6 +76,7 @@ jobs:
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --type jar \
             --src-path "${{ steps.artifact.outputs.path }}"
+        # Lädt das JAR als Run-from-Package in den App Service hoch.
 
       - name: Output App Service hostname
         run: |
@@ -81,6 +86,7 @@ jobs:
             --query "defaultHostName" \
             -o tsv)
           echo "https://$HOSTNAME"
+        # Ausgabe der Backend-URL im Job-Log.
 
       - name: Health check
         run: |
@@ -90,4 +96,5 @@ jobs:
             --query "defaultHostName" \
             -o tsv)
           curl -fsSL "https://$HOSTNAME${HEALTHCHECK_PATH}"
+        # Prüft, ob der Healthcheck-Endpunkt erreichbar ist (Standard '/').
 

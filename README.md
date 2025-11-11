@@ -92,7 +92,7 @@ Dieses Repository stellt eine vollständige Infrastruktur- und Deployment-Pipeli
 
 ---
 
-Weitere Architekturdetails siehe [`docs/arc42.md`](docs/arc42.md).
+Weitere Architekturdetails siehe [`docs/arc42.md`](docs/arc42-Azure-Infrastruktur-setup.md).
 # VSME Report
 
 Ein Projekt mit Backend und Frontend.

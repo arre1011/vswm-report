@@ -35,7 +35,7 @@ Bereitstellung einer skalierbaren Cloud-Umgebung auf Microsoft Azure für die VS
 - IaC: Terraform ≥ 1.6, Provider azurerm 4.x
 - CI/CD: GitHub Actions mit OIDC (azure/login)
 - Region primär `westeurope` (variabel)
-- Java 17, Node 18 (anpassbar)
+- Java 21, Node 18 (anpassbar)
 - Keine Nutzung von Azure DevOps, Key Vault optional
 
 ## 3. Kontextabgrenzung
@@ -45,9 +45,8 @@ Bereitstellung einer skalierbaren Cloud-Umgebung auf Microsoft Azure für die VS
 ```mermaid
 graph TD
   User[Business User] -->|Browser| SWA[Azure Static Web App]
-  SWA -->|REST| API[Azure App Service (Spring Boot)]
-  API --> DB[(Persistenz, optional)]
-  API --> AI[(Application Insights)]
+  SWA -->|REST| API[Azure App Service Spring Boot]
+
 ```
 
 ### 3.2 Technischer Kontext
@@ -78,7 +77,7 @@ graph LR
 graph TD
   RG[Resource Group]
   RG --> SWA[Static Web App]
-  RG --> ASP[App Service Plan (Linux)]
+  RG --> ASP[App Service Plan Linux]
   ASP --> APP[Linux Web App]
   RG --> AI[Application Insights]
   APP --> AI

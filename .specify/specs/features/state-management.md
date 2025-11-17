@@ -2,617 +2,497 @@
 
 **Version**: 1.0.0  
 **Status**: Active  
-**Last Updated**: 2025-11-17
+**Last Updated**: 2025-11-17  
+**Type**: Requirements Specification
 
 ---
 
 ## Overview
 
-This specification defines how the frontend manages VSME report state using:
-1. **Zustand** for reactive state management
-2. **Zustand Persist** for LocalStorage persistence
-3. **Auto-save** with onBlur + debounced onChange (900ms)
-4. **Real-time validation** during input
+This specification defines the **requirements** for frontend state management in VSME Easy Report. It describes **WHAT** state must be managed and **HOW** it should behave from a user perspective, not implementation details.
 
 ---
 
-## 1. Store Structure
+## 1. Requirements
 
-### Complete State Shape
+### R1: Report Data Persistence
+**What**: All user-entered report data must survive browser sessions.
 
-```typescript
-interface VsmeReportState {
-  // Report Data (from data model)
-  reportData: {
-    reportMetadata: {
-      reportDate: string
-      reportVersion: string
-      basisForPreparation: 'Basic Module Only' | 'Basic & Comprehensive'
-      language: 'en' | 'de'
-    }
-    basicModules: Record<string, ModuleData>  // Key: moduleCode (B1, B3, etc.)
-    comprehensiveModules: Record<string, ModuleData>  // Key: moduleCode (C1, C3, etc.)
-  }
-  
-  // UI State
-  wizard: {
-    currentStep: number
-    totalSteps: number
-    completedSteps: Set<number>
-    validationErrors: Record<string, string[]>  // Key: datapointId
-  }
-  
-  // Auto-save State
-  autoSave: {
-    lastSaved: Date | null
-    isDirty: boolean
-    isSaving: boolean
-  }
-  
-  // Actions
-  updateDatapoint: (moduleCode: string, datapointId: string, value: any) => void
-  updateTableDatapoint: (moduleCode: string, datapointId: string, items: any[]) => void
-  setValidationError: (datapointId: string, error: string | null) => void
-  goToStep: (step: number) => void
-  markStepComplete: (step: number) => void
-  resetStore: () => void
-}
-```
+**Why**: Users may take days/weeks to complete a VSME report. Data loss would be catastrophic for user trust.
 
-### Module Data Structure
-```typescript
-interface ModuleData {
-  moduleCode: string  // e.g., "B1", "B3"
-  datapoints: Record<string, DatapointValue>  // Key: datapointId
-  lastModified: Date
-  isValid: boolean
-}
+**Functional Requirements**:
+- All form inputs persist to browser storage
+- Data survives page reload (F5, Ctrl+R)
+- Data survives browser close/reopen
+- Data survives tab close/reopen
+- Clear/Reset function to start fresh
 
-interface DatapointValue {
-  value: any
-  isValid: boolean
-  error: string | null
-  lastModified: Date
-}
-```
+**Storage Constraints**:
+- Maximum 5 MB total data size
+- Use browser LocalStorage (not SessionStorage)
+- Store as JSON format
+- Include timestamp of last save
 
----
+**Data to Persist**:
+- All module data (basicModules, comprehensiveModules)
+- All datapoint values
+- Wizard progress (current step, completed steps)
+- Report metadata (entity name, reporting period, etc.)
 
-## 2. Zustand Store Implementation
-
-### Store Creation
-
-```typescript
-// frontend/src/stores/vsme-report-store.ts
-
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
-
-export const useVsmeReportStore = create<VsmeReportState>()(
-  persist(
-    immer((set, get) => ({
-      // Initial State
-      reportData: {
-        reportMetadata: {
-          reportDate: new Date().toISOString(),
-          reportVersion: '1.0.0',
-          basisForPreparation: 'Basic Module Only',
-          language: 'de'
-        },
-        basicModules: initializeBasicModules(),
-        comprehensiveModules: {}
-      },
-      
-      wizard: {
-        currentStep: 1,
-        totalSteps: 6,
-        completedSteps: new Set(),
-        validationErrors: {}
-      },
-      
-      autoSave: {
-        lastSaved: null,
-        isDirty: false,
-        isSaving: false
-      },
-      
-      // Actions
-      updateDatapoint: (moduleCode, datapointId, value) => {
-        set((state) => {
-          const isBasic = moduleCode.startsWith('B')
-          const modules = isBasic ? state.reportData.basicModules : state.reportData.comprehensiveModules
-          
-          if (!modules[moduleCode]) {
-            modules[moduleCode] = {
-              moduleCode,
-              datapoints: {},
-              lastModified: new Date(),
-              isValid: false
-            }
-          }
-          
-          modules[moduleCode].datapoints[datapointId] = {
-            value,
-            isValid: true,  // Will be validated separately
-            error: null,
-            lastModified: new Date()
-          }
-          
-          modules[moduleCode].lastModified = new Date()
-          state.autoSave.isDirty = true
-          state.autoSave.lastSaved = new Date()
-        })
-      },
-      
-      updateTableDatapoint: (moduleCode, datapointId, items) => {
-        set((state) => {
-          const isBasic = moduleCode.startsWith('B')
-          const modules = isBasic ? state.reportData.basicModules : state.reportData.comprehensiveModules
-          
-          if (!modules[moduleCode]) {
-            modules[moduleCode] = {
-              moduleCode,
-              datapoints: {},
-              lastModified: new Date(),
-              isValid: false
-            }
-          }
-          
-          modules[moduleCode].datapoints[datapointId] = {
-            value: items,  // Array of objects
-            isValid: true,
-            error: null,
-            lastModified: new Date()
-          }
-          
-          state.autoSave.isDirty = true
-          state.autoSave.lastSaved = new Date()
-        })
-      },
-      
-      setValidationError: (datapointId, error) => {
-        set((state) => {
-          if (error) {
-            if (!state.wizard.validationErrors[datapointId]) {
-              state.wizard.validationErrors[datapointId] = []
-            }
-            state.wizard.validationErrors[datapointId].push(error)
-          } else {
-            delete state.wizard.validationErrors[datapointId]
-          }
-        })
-      },
-      
-      goToStep: (step) => {
-        set((state) => {
-          if (step >= 1 && step <= state.wizard.totalSteps) {
-            state.wizard.currentStep = step
-          }
-        })
-      },
-      
-      markStepComplete: (step) => {
-        set((state) => {
-          state.wizard.completedSteps.add(step)
-        })
-      },
-      
-      resetStore: () => {
-        set({
-          reportData: {
-            reportMetadata: {
-              reportDate: new Date().toISOString(),
-              reportVersion: '1.0.0',
-              basisForPreparation: 'Basic Module Only',
-              language: 'de'
-            },
-            basicModules: initializeBasicModules(),
-            comprehensiveModules: {}
-          },
-          wizard: {
-            currentStep: 1,
-            totalSteps: 6,
-            completedSteps: new Set(),
-            validationErrors: {}
-          },
-          autoSave: {
-            lastSaved: null,
-            isDirty: false,
-            isSaving: false
-          }
-        })
-      }
-    })),
-    {
-      name: 'vsme-report-state',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        reportData: state.reportData,
-        wizard: {
-          currentStep: state.wizard.currentStep,
-          completedSteps: Array.from(state.wizard.completedSteps)  // Set → Array for JSON
-        }
-      })
-    }
-  )
-)
-
-// Helper: Initialize all basic modules with empty state
-function initializeBasicModules(): Record<string, ModuleData> {
-  const basicModuleCodes = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11']
-  
-  return basicModuleCodes.reduce((acc, code) => {
-    acc[code] = {
-      moduleCode: code,
-      datapoints: {},
-      lastModified: new Date(),
-      isValid: false
-    }
-    return acc
-  }, {} as Record<string, ModuleData>)
-}
-```
-
----
-
-## 3. Auto-Save Strategy
-
-### Timing Rules
-
-1. **onBlur**: Immediate save + validation when user leaves field
-2. **onChange**: Debounced save (900ms) during typing
-3. **No Loading Spinners**: Silent background save
-
-### Implementation
-
-```typescript
-// frontend/src/hooks/useAutoSave.ts
-
-import { useCallback, useEffect, useRef } from 'react'
-import { useVsmeReportStore } from '@/stores/vsme-report-store'
-import { debounce } from 'lodash'
-
-export function useAutoSave(
-  moduleCode: string,
-  datapointId: string,
-  validationSchema: ZodSchema
-) {
-  const updateDatapoint = useVsmeReportStore((state) => state.updateDatapoint)
-  const setValidationError = useVsmeReportStore((state) => state.setValidationError)
-  
-  // Debounced save for onChange (900ms)
-  const debouncedSave = useRef(
-    debounce((value: any) => {
-      updateDatapoint(moduleCode, datapointId, value)
-    }, 900)
-  ).current
-  
-  // Immediate save + validation for onBlur
-  const saveOnBlur = useCallback(async (value: any) => {
-    // Validate first
-    const result = await validationSchema.safeParseAsync(value)
-    
-    if (!result.success) {
-      const error = result.error.errors[0]?.message
-      setValidationError(datapointId, error)
-    } else {
-      setValidationError(datapointId, null)
-    }
-    
-    // Save regardless of validation (keep invalid data too)
-    updateDatapoint(moduleCode, datapointId, value)
-  }, [moduleCode, datapointId, validationSchema, updateDatapoint, setValidationError])
-  
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      debouncedSave.cancel()
-    }
-  }, [debouncedSave])
-  
-  return {
-    saveOnChange: debouncedSave,
-    saveOnBlur
-  }
-}
-```
-
-### Usage in Form Component
-
-```typescript
-// Example: InputWithInfo component
-
-import { useAutoSave } from '@/hooks/useAutoSave'
-import { z } from 'zod'
-
-interface InputWithInfoProps {
-  moduleCode: string
-  datapointId: string
-  label: string
-  validationSchema: z.ZodSchema
-}
-
-export function InputWithInfo({ 
-  moduleCode, 
-  datapointId, 
-  label, 
-  validationSchema 
-}: InputWithInfoProps) {
-  const value = useVsmeReportStore(
-    (state) => state.reportData.basicModules[moduleCode]?.datapoints[datapointId]?.value || ''
-  )
-  
-  const error = useVsmeReportStore(
-    (state) => state.wizard.validationErrors[datapointId]?.[0]
-  )
-  
-  const { saveOnChange, saveOnBlur } = useAutoSave(moduleCode, datapointId, validationSchema)
-  
-  return (
-    <div>
-      <Label>{label}</Label>
-      <Input
-        value={value}
-        onChange={(e) => {
-          // Update local state immediately (optimistic UI)
-          saveOnChange(e.target.value)
-        }}
-        onBlur={(e) => {
-          // Validate and save
-          saveOnBlur(e.target.value)
-        }}
-      />
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-    </div>
-  )
-}
-```
-
----
-
-## 4. LocalStorage Persistence
-
-### What Gets Persisted
-
-✅ **Saved to LocalStorage:**
-- All report data (reportData)
-- Current wizard step
-- Completed steps
-
-❌ **Not Persisted:**
+**Data NOT to Persist**:
+- UI state (modals open/closed, tooltips)
 - Validation errors (recalculated on load)
-- Auto-save metadata (lastSaved, isDirty)
-- UI-only state
+- Temporary input values (before blur)
 
-### Hydration on Page Load
-
-```typescript
-// frontend/src/App.tsx
-
-import { useEffect } from 'react'
-import { useVsmeReportStore } from '@/stores/vsme-report-store'
-
-export function App() {
-  const hasHydrated = useVsmeReportStore((state) => state._hasHydrated)
-  
-  useEffect(() => {
-    // Zustand persist automatically hydrates from LocalStorage
-    // We just need to wait for it
-    if (hasHydrated) {
-      console.log('✅ State hydrated from LocalStorage')
-    }
-  }, [hasHydrated])
-  
-  if (!hasHydrated) {
-    return <div>Loading...</div>
-  }
-  
-  return <Wizard />
-}
-```
-
-### Clear Storage (User Action)
-
-```typescript
-// Clear all report data
-const resetStore = useVsmeReportStore((state) => state.resetStore)
-
-function handleClearReport() {
-  if (confirm('Alle Daten löschen?')) {
-    resetStore()
-    localStorage.removeItem('vsme-report-state')
-  }
-}
-```
+**Acceptance Criteria**:
+- [ ] Enter data in B1 module → Reload page → Data still there
+- [ ] Fill 5 modules → Close browser → Reopen → All data present
+- [ ] LocalStorage key is unique per browser (no conflicts)
+- [ ] Storage size < 5 MB even with all modules filled
+- [ ] Clear button removes all persisted data
+- [ ] Timestamp shows when data was last modified
 
 ---
 
-## 5. Validation During Input
+### R2: Auto-Save Behavior
+**What**: Form inputs automatically save without explicit user action.
 
-### Real-Time Validation
+**Why**: Reduce cognitive load (no "Save" button), prevent accidental data loss, modern UX expectation.
 
-```typescript
-// Validate while typing (debounced)
-const debouncedValidate = useRef(
-  debounce(async (value: any, schema: ZodSchema) => {
-    const result = await schema.safeParseAsync(value)
-    if (!result.success) {
-      // Show error, but don't block typing
-      setValidationError(datapointId, result.error.errors[0]?.message)
-    } else {
-      setValidationError(datapointId, null)
-    }
-  }, 500)  // Faster than save (900ms) for immediate feedback
-).current
+**Timing Requirements**:
 
-onChange={(e) => {
-  const value = e.target.value
-  saveOnChange(value)         // Debounced save (900ms)
-  debouncedValidate(value, schema)  // Debounced validation (500ms)
-}}
+| Trigger | Timing | Behavior |
+|---------|--------|----------|
+| **onBlur** | Immediate | Save when field loses focus + validate |
+| **onChange** | Debounced 900ms | Save while typing (after pause) |
+| **Wizard Step Change** | Immediate | Save current step before navigation |
+
+**User Feedback**:
+- **Auto-save**: Silent (no loading spinner, no "Saved!" message)
+- **Validation Error**: Show immediately on blur
+- **Network Error**: N/A (LocalStorage only, no network)
+
+**Edge Cases**:
+- **Rapid typing**: Only save after 900ms pause (debounce)
+- **Field to field**: onBlur saves each field individually
+- **Multiple tabs**: Last save wins (no conflict resolution needed)
+
+**Acceptance Criteria**:
+- [ ] Type in field → Wait 900ms → Data saved to LocalStorage
+- [ ] Type in field → Tab to next field (blur) → Data saved immediately
+- [ ] Type fast without pause → Only 1 save after 900ms pause
+- [ ] Navigate to next step → Current step data saved
+- [ ] No visible "Saving..." indicators (silent save)
+- [ ] Validation runs on blur (before save)
+- [ ] Invalid data does NOT save (validation blocks save)
+
+---
+
+### R3: Wizard State Management
+**What**: Track user's progress through the wizard steps.
+
+**Why**: Allow jumping between steps, show completion status, prevent navigation to invalid steps.
+
+**Wizard State Data**:
+- **currentStep**: number (0-based index)
+- **completedSteps**: array of step numbers
+- **visitedSteps**: array of step numbers
+- **totalSteps**: number (constant, based on report mode)
+
+**Navigation Rules**:
+| Action | Validation Required? | Allowed When? |
+|--------|---------------------|---------------|
+| **Next** | ✅ Yes | Current step valid |
+| **Back** | ❌ No | Any previous step |
+| **Jump to Completed** | ❌ No | Step is in completedSteps |
+| **Jump to Incomplete** | ✅ Yes | Current step valid |
+
+**Step Completion Logic**:
+- Step becomes "completed" when:
+  - User clicks "Next" AND validation passes
+  - All required fields in that step have values
+  - All validations pass
+
+**Step Visual Indicators**:
+- **Current**: Highlighted, editable
+- **Completed**: Checkmark, clickable
+- **Incomplete**: Number only, not clickable (unless current)
+- **Future**: Grayed out, not clickable
+
+**Acceptance Criteria**:
+- [ ] Start wizard → currentStep = 0
+- [ ] Complete step 0 → Click Next → currentStep = 1, completedSteps = [0]
+- [ ] Jump back to step 0 → No validation required
+- [ ] Try to jump to step 3 (incomplete) → Blocked (must complete 0,1,2 first)
+- [ ] Progress indicator shows 3/10 steps completed
+- [ ] Stepper UI reflects completed/incomplete status
+
+---
+
+### R4: Validation State Integration
+**What**: Track validation errors per field and per module.
+
+**Why**: Block navigation to next step if current step invalid, show user what needs fixing.
+
+**Validation Triggers**:
+- **onBlur**: Validate single field
+- **Next button**: Validate entire current step/module
+- **onLoad**: Validate all loaded data (show errors if data is incomplete)
+
+**Validation State Data**:
+```
+validationErrors: {
+  "B1": {
+    "entityName": ["Required field"],
+    "reportingPeriodStart": ["Invalid date format"]
+  },
+  "B3": {
+    "totalEmployees": ["Must be a positive number"]
+  }
+}
 ```
 
-### Module-Level Validation (on Next)
+**Error Display**:
+- Show error message below field (red text)
+- Show error icon next to field
+- Show error count in step indicator (e.g., "B1 (2 errors)")
 
+**Acceptance Criteria**:
+- [ ] Leave required field empty → Blur → Error message appears
+- [ ] Fix error → Blur → Error message disappears
+- [ ] Click Next with errors → Blocked, errors highlighted
+- [ ] Step indicator shows error count
+- [ ] Validation errors do NOT persist to LocalStorage
+
+---
+
+### R5: Module Data Structure
+**What**: Store all VSME module data in a structured format matching the data model.
+
+**Why**: Align frontend state with data model spec, simplify backend integration.
+
+**Data Structure** (conceptual):
 ```typescript
-// frontend/src/hooks/useModuleValidation.ts
+{
+  reportMetadata: {
+    entityName: string
+    reportingPeriodStart: string
+    reportingPeriodEnd: string
+    // ...
+  },
+  basicModules: [
+    {
+      moduleCode: "B1",
+      disclosures: [
+        {
+          disclosureId: "B1-1",
+          datapoints: [
+            { datapointId: "entityName", value: "Test GmbH" },
+            { datapointId: "legalForm", value: "GmbH" }
+          ]
+        }
+      ]
+    }
+  ],
+  comprehensiveModules: [
+    // Same structure as basicModules
+  ]
+}
+```
 
-export function useModuleValidation(moduleCode: string) {
-  const moduleData = useVsmeReportStore(
-    (state) => state.reportData.basicModules[moduleCode]
+**Alignment with Data Model**:
+- Structure MUST match `docs/data-model/vsme-data-model-spec.json`
+- datapointIds MUST match data model exactly
+- Array datapoints MUST be arrays of objects
+- Optional fields CAN be null/undefined
+
+**Acceptance Criteria**:
+- [ ] State structure matches data model JSON schema
+- [ ] Can serialize state to JSON for API call (no transformation needed)
+- [ ] Can deserialize data model into state (no transformation needed)
+- [ ] Array datapoints are typed correctly (not string)
+
+---
+
+### R6: Report Mode Selection
+**What**: User selects Basic or Comprehensive mode, which determines which modules to show.
+
+**Why**: Comprehensive mode has additional modules (C1-C9) that Basic mode doesn't need.
+
+**Mode Options**:
+- **Basic**: Only B1-B11 modules
+- **Comprehensive**: B1-B11 + C1-C9 modules
+
+**State Data**:
+- **reportMode**: "basic" | "comprehensive"
+- Set at wizard start (step 0: "Select Mode")
+- Can be changed later (resets wizard progress)
+
+**Behavior**:
+- Mode selection happens in first step (before module inputs)
+- Changing mode shows confirmation dialog: "This will reset your progress. Continue?"
+- After mode change: clear comprehensiveModules data (if switching to basic)
+
+**Acceptance Criteria**:
+- [ ] Select Basic → Only B1-B11 steps shown
+- [ ] Select Comprehensive → B1-B11 + C1-C9 steps shown
+- [ ] Switch mode mid-wizard → Confirmation dialog
+- [ ] Confirm switch → Progress reset, data cleared (for removed modules)
+- [ ] Mode persists in LocalStorage
+
+---
+
+## 2. Technical Constraints
+
+### C1: State Management Library
+**Must Use**: Zustand
+
+**Reasoning**:
+- Already in project (`package.json`)
+- Lightweight (~1 KB)
+- Excellent TypeScript support
+- Simple API (no boilerplate)
+- Good React 18 support
+
+**Must Not Use**:
+- Redux (too much boilerplate)
+- Context API alone (performance issues with large state)
+- Jotai/Recoil (not in project)
+
+### C2: Persistence Strategy
+**Must Use**: Zustand Persist Middleware + LocalStorage
+
+**Reasoning**:
+- Built-in Zustand feature
+- Automatic sync between store and LocalStorage
+- No manual serialization needed
+- Handles version migrations
+
+**Configuration**:
+- Storage key: `vsme-report-state`
+- Version: 1 (for future migrations)
+- Partialize: Only persist reportData, wizard, reportMode (not UI state)
+
+### C3: Immutability
+**Must Use**: Immer middleware
+
+**Reasoning**:
+- Simplifies immutable updates
+- Prevents accidental mutations
+- Reduces bugs
+- Better developer experience
+
+**Example Benefit**:
+```typescript
+// Without Immer (error-prone):
+set(state => ({
+  ...state,
+  basicModules: state.basicModules.map(m => 
+    m.moduleCode === 'B1' ? { ...m, datapoints: [...] } : m
   )
-  
-  const validateModule = async () => {
-    const errors: string[] = []
-    
-    // Get module schema (generated from data model)
-    const schema = getModuleSchema(moduleCode)
-    
-    // Validate all datapoints
-    const result = await schema.safeParseAsync(moduleData.datapoints)
-    
-    if (!result.success) {
-      result.error.errors.forEach((err) => {
-        errors.push(`${err.path.join('.')}: ${err.message}`)
-      })
-    }
-    
-    return {
-      isValid: errors.length === 0,
-      errors
-    }
-  }
-  
-  return { validateModule }
-}
-```
+}))
 
----
-
-## 6. Stepper State Management
-
-### Navigation Between Steps
-
-```typescript
-const wizard = useVsmeReportStore((state) => state.wizard)
-const goToStep = useVsmeReportStore((state) => state.goToStep)
-const markStepComplete = useVsmeReportStore((state) => state.markStepComplete)
-
-// Next button handler
-async function handleNext() {
-  const { isValid, errors } = await validateModule(currentModuleCode)
-  
-  if (!isValid) {
-    // Show errors, block navigation
-    showValidationErrors(errors)
-    return
-  }
-  
-  // Mark current step as complete
-  markStepComplete(wizard.currentStep)
-  
-  // Go to next step
-  goToStep(wizard.currentStep + 1)
-}
-
-// Back button handler (no validation)
-function handleBack() {
-  goToStep(wizard.currentStep - 1)
-}
-
-// Direct step navigation
-function handleGoToStep(step: number) {
-  // Only allow if step is completed or adjacent
-  if (wizard.completedSteps.has(step) || Math.abs(step - wizard.currentStep) === 1) {
-    goToStep(step)
-  }
-}
-```
-
----
-
-## 7. Performance Optimization
-
-### Selectors
-
-Use granular selectors to avoid unnecessary re-renders:
-
-```typescript
-// ❌ Bad: Re-renders on any state change
-const state = useVsmeReportStore()
-
-// ✅ Good: Only re-renders when this specific value changes
-const entityName = useVsmeReportStore(
-  (state) => state.reportData.basicModules.B1?.datapoints.entityName?.value
-)
-```
-
-### Computed Values
-
-```typescript
-// Memoized selector for form dirty state
-const isFormDirty = useVsmeReportStore(
-  (state) => state.autoSave.isDirty
-)
-
-// Memoized selector for validation status
-const hasValidationErrors = useVsmeReportStore(
-  (state) => Object.keys(state.wizard.validationErrors).length > 0
-)
-```
-
----
-
-## 8. Testing Strategy
-
-### Unit Tests
-
-```typescript
-describe('VsmeReportStore', () => {
-  test('should update datapoint and mark as dirty', () => {
-    const { result } = renderHook(() => useVsmeReportStore())
-    
-    act(() => {
-      result.current.updateDatapoint('B1', 'entityName', 'Test GmbH')
-    })
-    
-    expect(result.current.reportData.basicModules.B1.datapoints.entityName.value).toBe('Test GmbH')
-    expect(result.current.autoSave.isDirty).toBe(true)
-  })
-  
-  test('should persist to localStorage', () => {
-    const { result } = renderHook(() => useVsmeReportStore())
-    
-    act(() => {
-      result.current.updateDatapoint('B1', 'entityName', 'Test GmbH')
-    })
-    
-    const stored = JSON.parse(localStorage.getItem('vsme-report-state')!)
-    expect(stored.state.reportData.basicModules.B1.datapoints.entityName.value).toBe('Test GmbH')
-  })
+// With Immer (simple):
+set(draft => {
+  draft.basicModules[0].datapoints[0].value = "New Value"
 })
 ```
 
----
-
-## 9. Implementation Checklist
-
-- [ ] Create Zustand store with persist middleware
-- [ ] Implement updateDatapoint action
-- [ ] Implement updateTableDatapoint action
-- [ ] Create useAutoSave hook
-- [ ] Implement debounced onChange (900ms)
-- [ ] Implement immediate onBlur with validation
-- [ ] Add real-time validation (500ms debounce)
-- [ ] Implement stepper navigation
-- [ ] Add module-level validation
-- [ ] Test LocalStorage persistence
-- [ ] Test hydration on page reload
-- [ ] Add unit tests
-- [ ] Performance test with large forms
+### C4: Performance
+**Constraints**:
+- State updates MUST NOT block UI rendering
+- Debounce onChange to 900ms (avoid excessive updates)
+- LocalStorage writes MUST NOT block UI
+- Selectors MUST use shallow equality checks
 
 ---
 
-**Next Steps**: Implement store, test auto-save, verify LocalStorage persistence.
+## 3. Architecture Guidance
 
+### Recommended Patterns
+
+#### Pattern 1: Single Store
+**Why**: Simpler, all data in one place, easier debugging
+
+**Structure**:
+```typescript
+interface VsmeReportState {
+  // Data
+  reportData: { ... }
+  
+  // Wizard
+  wizard: { currentStep, completedSteps, ... }
+  
+  // Validation
+  validationErrors: { ... }
+  
+  // Actions
+  updateDatapoint: (moduleCode, datapointId, value) => void
+  goToStep: (step) => void
+  validateStep: (step) => boolean
+  // ...
+}
+```
+
+#### Pattern 2: Custom Hooks for Business Logic
+**Why**: Separate presentation from business logic
+
+**Examples**:
+- `useAutoSave()`: Handles onBlur + debounced onChange
+- `useWizardNavigation()`: Handles step navigation + validation
+- `useValidation()`: Zod schema validation
+
+#### Pattern 3: Selectors for Performance
+**Why**: Avoid unnecessary re-renders
+
+**Example**:
+```typescript
+// Bad: Component re-renders on ANY state change
+const state = useVsmeReportStore()
+
+// Good: Only re-renders when entityName changes
+const entityName = useVsmeReportStore(state => state.reportData.basicModules[0]...)
+```
+
+### Alternative Approaches (Not Recommended but Allowed)
+- Multiple smaller stores (one per module)
+  - **Pro**: Better performance isolation
+  - **Con**: More complex, harder to maintain
+- Context + useReducer instead of Zustand
+  - **Pro**: No external dependency
+  - **Con**: More boilerplate, worse performance
+
+---
+
+## 4. Integration Points
+
+### I1: Data Model
+**Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**What to Extract**:
+- Module structure (codes, names)
+- Disclosure structure
+- Datapoint IDs, types, validations
+
+**When**: At build time (code generation) or runtime (dynamic forms)
+
+### I2: Zod Validation Schemas
+**Source**: Auto-generated from data model (Task 4)
+
+**Usage**:
+```typescript
+import { b1ModuleSchema } from '@/schemas/vsme-zod-schemas'
+
+const validateModule = (data) => b1ModuleSchema.safeParse(data)
+```
+
+### I3: Form Components
+**Components**: `input-with-info.tsx`, `select-with-info.tsx`, `date-picker-with-info.tsx`
+
+**Required Props**:
+- `value`: from Zustand store
+- `onChange`: calls store action (debounced)
+- `onBlur`: calls store action + validation
+- `error`: from validation state
+
+### I4: Backend API (TanStack Query)
+**Export Request**:
+```typescript
+const exportMutation = useMutation({
+  mutationFn: (data: VsmeReportState) => 
+    fetch('/api/vsme/export', { body: JSON.stringify(data) })
+})
+
+// Trigger on "Export" button
+exportMutation.mutate(useVsmeReportStore.getState().reportData)
+```
+
+**State Usage**: Read entire reportData from store, send to backend
+
+---
+
+## 5. Non-Requirements
+
+**Explicitly NOT part of this specification**:
+- ❌ Undo/Redo functionality (future enhancement)
+- ❌ Multi-device sync (LocalStorage is per-device)
+- ❌ Conflict resolution (only one user per report)
+- ❌ Version history or audit log
+- ❌ Real-time collaboration (multiple users editing same report)
+- ❌ Offline-first sync (no backend sync, only on export)
+- ❌ Import from previous report (future enhancement)
+- ❌ Auto-save to backend (only LocalStorage, backend only on export)
+
+---
+
+## 6. User Experience Requirements
+
+### UX1: Performance
+**Requirements**:
+- Form inputs feel instant (no lag)
+- Auto-save is silent (no spinners, no notifications)
+- Validation feedback appears within 100ms of blur
+- Step navigation within 200ms
+
+### UX2: Feedback
+**Requirements**:
+- **No feedback for auto-save** (silent is best)
+- **Clear feedback for validation errors** (red text, icon)
+- **Clear feedback for step completion** (checkmark in stepper)
+- **Clear feedback for mode switch** (confirmation dialog)
+
+### UX3: Accessibility
+**Requirements**:
+- Validation errors announced to screen readers
+- Focus management on step navigation
+- Keyboard navigation works correctly
+
+---
+
+## 7. Testing Requirements
+
+### Unit Tests (Recommended)
+- Store actions update state correctly
+- Validation runs on blur
+- Debounce works (900ms delay)
+- LocalStorage persistence works
+
+### Integration Tests (Recommended)
+- Fill form → Reload → Data persists
+- Navigate steps → Wizard state correct
+- Validation blocks navigation
+
+### E2E Tests (Required)
+- Complete wizard flow from start to export
+- Data persistence across page reload
+- Mode switching with data reset
+
+---
+
+## 8. Data Model Reference
+
+**Primary Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**Schema Definitions**: `frontend/src/types/vsme-api-types.ts`
+
+**Zod Schemas**: Generated by Task 4 (Code Generator)
+
+---
+
+## 9. Success Metrics
+
+**Definition of Done**:
+- [ ] Enter data in B1 → Reload → Data persists
+- [ ] Type in field → Blur → Saves + validates immediately
+- [ ] Type fast → Only saves after 900ms pause
+- [ ] Complete B1 → Click Next → Navigate to B2 (no errors)
+- [ ] Incomplete B1 → Click Next → Blocked (errors shown)
+- [ ] Switch mode → Confirmation → Progress reset
+- [ ] Export → State serialized correctly for API
+- [ ] Performance: No input lag, instant feedback
+
+---
+
+**Implementation Freedom**: Choose store structure, hook patterns, and selector strategies that work best, as long as all requirements are met.
+
+**Questions?** Clarify with team before implementation if any requirement is ambiguous.

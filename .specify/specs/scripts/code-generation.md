@@ -2,514 +2,332 @@
 
 **Version**: 1.0.0  
 **Status**: Active  
-**Last Updated**: 2025-11-17
+**Last Updated**: 2025-11-17  
+**Type**: Requirements Specification
 
 ---
 
 ## Overview
 
-This specification defines automated code generation scripts that read the VSME data model and generate:
-1. **Zod validation schemas** with React Hook Form integration
-2. **i18n translation keys** extracted from data model labels
-3. **TypeScript types** for type-safe development
-
-**Source**: `docs/data-model/vsme-data-model-spec.json`
+This specification defines **requirements** for automated code generation from the VSME data model. It describes **WHAT** to generate and **WHY**, not implementation details.
 
 ---
 
-## 1. Zod Schema Generation
+## 1. Requirements
 
-### Goal
-Generate Zod validation schemas for React Hook Form from the VSME data model.
+### R1: Zod Schema Generation
+**What**: Generate TypeScript Zod validation schemas from the VSME data model.
 
-### Input
+**Why**: 
+- Avoid manual schema writing (error-prone, 797 datapoints!)
+- Keep validation in sync with data model (single source of truth)
+- Enable type-safe validation with React Hook Form
+
+**Input**: `docs/data-model/vsme-data-model-spec.json`
+
+**Output**: `frontend/src/schemas/vsme-zod-schemas.ts`
+
+**Generated Content**:
+
+#### 1.1 Datapoint Schemas
+Generate a Zod schema for each datapoint based on its `dataType` and `validation` rules.
+
+**Datatype Mapping**:
+| DataType | Zod Schema | Example |
+|----------|-----------|---------|
+| text | `z.string()` | `z.string().min(1).max(255)` |
+| textarea | `z.string()` | `z.string().max(5000)` |
+| number | `z.number()` or `z.coerce.number()` | `z.number().positive()` |
+| date | `z.string().regex(/^\d{4}-\d{2}-\d{2}$/)` | Date format YYYY-MM-DD |
+| boolean | `z.boolean()` | `z.boolean()` |
+| select | `z.enum([...])` | `z.enum(["Option1", "Option2"])` |
+| url | `z.string().url()` | `z.string().url()` |
+| email | `z.string().email()` | `z.string().email()` |
+
+**Required Field Handling**:
+```typescript
+// If datapoint.required === true
+z.string().min(1, "This field is required")
+
+// If datapoint.required === false
+z.string().optional()
+```
+
+**Validation Rule Mapping**:
+| Validation Rule | Zod Method |
+|----------------|-----------|
+| `minLength: 5` | `.min(5)` |
+| `maxLength: 100` | `.max(100)` |
+| `pattern: "^[A-Z]"` | `.regex(/^[A-Z]/)` |
+| `min: 0` | `.min(0)` |
+| `max: 100` | `.max(100)` |
+
+**Expected Output Example**:
+```typescript
+export const entityNameSchema = z.string()
+  .min(1, "Entity name is required")
+  .max(255, "Entity name too long")
+
+export const totalEmployeesSchema = z.coerce.number()
+  .int("Must be an integer")
+  .positive("Must be positive")
+  .optional()
+
+export const legalFormSchema = z.enum([
+  "GmbH", 
+  "AG", 
+  "UG", 
+  "KG", 
+  "OHG", 
+  "Einzelunternehmen"
+])
+```
+
+#### 1.2 Disclosure Schemas
+Generate a Zod schema for each disclosure that combines all its datapoints.
+
+**Expected Output Example**:
+```typescript
+export const b1Disclosure1Schema = z.object({
+  entityName: entityNameSchema,
+  legalForm: legalFormSchema,
+  registrationNumber: registrationNumberSchema,
+  // ... all datapoints in this disclosure
+})
+```
+
+#### 1.3 Module Schemas
+Generate a Zod schema for each module that combines all its disclosures.
+
+**Expected Output Example**:
+```typescript
+export const b1ModuleSchema = z.object({
+  moduleCode: z.literal("B1"),
+  disclosures: z.array(
+    z.object({
+      disclosureId: z.string(),
+      datapoints: z.array(
+        z.object({
+          datapointId: z.string(),
+          value: z.any() // Or union of all possible schemas
+        })
+      )
+    })
+  )
+})
+```
+
+#### 1.4 Array/Repeating Data Schemas
+For array datapoints (e.g., `listOfSites`), generate a schema for the array structure.
+
+**Input Example** (from data model):
 ```json
-// From docs/data-model/vsme-data-model-spec.json
 {
-  "moduleCode": "B1",
-  "disclosures": [{
-    "disclosureId": "b1-xbrl-info",
-    "datapoints": [
-      {
-        "datapointId": "entityName",
-        "dataType": "text",
-        "required": true,
-        "label": { "en": "Entity Name", "de": "Name des Unternehmens" }
-      },
-      {
-        "datapointId": "currency",
-        "dataType": "select",
-        "required": true,
-        "options": [
-          { "value": "EUR", "label": { "en": "Euro", "de": "Euro" } },
-          { "value": "USD", "label": { "en": "US Dollar", "de": "US-Dollar" } }
-        ]
-      },
-      {
-        "datapointId": "turnover",
-        "dataType": "number",
-        "required": true,
-        "unit": "currency"
-      }
-    ]
-  }]
+  "datapointId": "listOfSites",
+  "dataType": "array",
+  "arrayStructure": {
+    "siteId": { "dataType": "text", "required": true },
+    "siteName": { "dataType": "text", "required": true },
+    "siteCity": { "dataType": "text", "required": false }
+  },
+  "maxItems": 25
 }
 ```
 
-### Output
+**Expected Output**:
 ```typescript
-// Generated: frontend/src/domains/report/schemas/b1-schema.ts
-
-import { z } from 'zod'
-
-/**
- * B1 - Basis for Preparation
- * Auto-generated from docs/data-model/vsme-data-model-spec.json
- * DO NOT EDIT MANUALLY
- */
-
-// Individual field schemas
-export const entityNameSchema = z.string()
-  .min(1, { message: 'validation.required' })
-  .max(255, { message: 'validation.max_length' })
-
-export const currencySchema = z.enum(['EUR', 'USD', 'GBP', 'CHF'], {
-  errorMap: () => ({ message: 'validation.invalid_option' })
-})
-
-export const turnoverSchema = z.number({
-  required_error: 'validation.required',
-  invalid_type_error: 'validation.must_be_number'
-}).positive({ message: 'validation.must_be_positive' })
-
-// Disclosure schemas
-export const b1XbrlInfoSchema = z.object({
-  entityName: entityNameSchema,
-  entityIdentifier: z.string().min(1),
-  currency: currencySchema,
-  reportingPeriodStartYear: z.number().int().min(2000).max(2100),
-  reportingPeriodStartMonth: z.number().int().min(1).max(12),
-  reportingPeriodStartDay: z.number().int().min(1).max(31),
-  reportingPeriodEndYear: z.number().int().min(2000).max(2100),
-  reportingPeriodEndMonth: z.number().int().min(1).max(12),
-  reportingPeriodEndDay: z.number().int().min(1).max(31)
-})
-
-// Table/Array schemas
-export const listOfSitesItemSchema = z.object({
+export const siteItemSchema = z.object({
   siteId: z.string().min(1),
   siteName: z.string().min(1),
-  siteAddress: z.string().min(1),
-  siteCity: z.string().min(1),
-  siteCountry: z.string().min(1)
+  siteCity: z.string().optional()
 })
 
-export const listOfSitesSchema = z.array(listOfSitesItemSchema)
-  .min(1, { message: 'validation.min_items' })
-  .max(25, { message: 'validation.max_items' })
-
-// Complete module schema
-export const b1ModuleSchema = z.object({
-  // XBRL Info
-  entityName: entityNameSchema,
-  entityIdentifier: z.string().min(1),
-  currency: currencySchema,
-  reportingPeriodStartYear: z.number().int(),
-  reportingPeriodStartMonth: z.number().int(),
-  reportingPeriodStartDay: z.number().int(),
-  reportingPeriodEndYear: z.number().int(),
-  reportingPeriodEndMonth: z.number().int(),
-  reportingPeriodEndDay: z.number().int(),
-  
-  // Basis for Preparation
-  basisForPreparation: z.enum(['Basic Module Only', 'Basic & Comprehensive']),
-  omittedDisclosures: z.string().optional(),
-  basisForReporting: z.enum(['Consolidated', 'Individual']),
-  legalForm: z.string().min(1),
-  naceSectorCode: z.string().min(1),
-  turnover: turnoverSchema,
-  numberOfEmployees: z.number().int().positive(),
-  primaryCountry: z.string().min(1),
-  
-  // Repeating data
-  listOfSubsidiaries: z.array(z.object({
-    subsidiaryName: z.string(),
-    subsidiaryIdentifier: z.string(),
-    subsidiaryCountry: z.string()
-  })).optional(),
-  listOfSites: listOfSitesSchema
-})
-
-export type B1FormData = z.infer<typeof b1ModuleSchema>
+export const listOfSitesSchema = z.array(siteItemSchema)
+  .max(25, "Maximum 25 sites allowed")
 ```
 
-### Implementation Script
-
-```typescript
-// scripts/generate-zod-schemas.ts
-
-import fs from 'fs'
-import path from 'path'
-
-interface DataModel {
-  coreReport: {
-    basicModules: Module[]
-    comprehensiveModules: Module[]
-  }
-}
-
-interface Module {
-  moduleCode: string
-  moduleName: { en: string; de: string }
-  disclosures: Disclosure[]
-}
-
-interface Disclosure {
-  disclosureId: string
-  disclosureName: { en: string; de: string }
-  datapoints: Datapoint[]
-}
-
-interface Datapoint {
-  datapointId: string
-  label: { en: string; de: string }
-  dataType: 'text' | 'number' | 'date' | 'boolean' | 'select' | 'table' | 'textarea' | 'url' | 'email'
-  required: boolean
-  excelNamedRange?: string
-  options?: Array<{ value: string; label: { en: string; de: string } }>
-  unit?: string
-  minRows?: number
-  maxRows?: number
-  columns?: Datapoint[]
-}
-
-function generateZodSchema(dataType: string, datapointId: string, required: boolean, options?: any[], minRows?: number, maxRows?: number): string {
-  switch (dataType) {
-    case 'text':
-    case 'textarea':
-      return required 
-        ? `z.string().min(1, { message: 'validation.required' })`
-        : `z.string().optional()`
-    
-    case 'email':
-      return required
-        ? `z.string().email({ message: 'validation.invalid_email' })`
-        : `z.string().email().optional()`
-    
-    case 'url':
-      return required
-        ? `z.string().url({ message: 'validation.invalid_url' })`
-        : `z.string().url().optional()`
-    
-    case 'number':
-      return required
-        ? `z.number({ required_error: 'validation.required', invalid_type_error: 'validation.must_be_number' }).positive()`
-        : `z.number().positive().optional()`
-    
-    case 'date':
-      return required
-        ? `z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/, { message: 'validation.invalid_date' })`
-        : `z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional()`
-    
-    case 'boolean':
-      return `z.boolean()`
-    
-    case 'select':
-      if (!options || options.length === 0) {
-        return `z.string()`
-      }
-      const enumValues = options.map(opt => `'${opt.value}'`).join(', ')
-      return required
-        ? `z.enum([${enumValues}], { errorMap: () => ({ message: 'validation.invalid_option' }) })`
-        : `z.enum([${enumValues}]).optional()`
-    
-    case 'table':
-      // Will be handled separately with item schema
-      return `z.array(${datapointId}ItemSchema)${minRows ? `.min(${minRows})` : ''}${maxRows ? `.max(${maxRows})` : ''}`
-    
-    default:
-      return `z.any()`
-  }
-}
-
-function generateModuleSchema(module: Module): string {
-  const { moduleCode, moduleName, disclosures } = module
-  
-  let output = `// Generated: frontend/src/domains/report/schemas/${moduleCode.toLowerCase()}-schema.ts\n\n`
-  output += `import { z } from 'zod'\n\n`
-  output += `/**\n * ${moduleCode} - ${moduleName.en}\n * Auto-generated from docs/data-model/vsme-data-model-spec.json\n * DO NOT EDIT MANUALLY\n */\n\n`
-  
-  // Individual field schemas
-  const allDatapoints: Datapoint[] = []
-  disclosures.forEach(disclosure => {
-    allDatapoints.push(...disclosure.datapoints)
-  })
-  
-  // Generate individual schemas
-  allDatapoints.forEach(datapoint => {
-    if (datapoint.dataType === 'table') {
-      // Generate item schema for table
-      if (datapoint.columns) {
-        output += `export const ${datapoint.datapointId}ItemSchema = z.object({\n`
-        datapoint.columns.forEach(col => {
-          const schema = generateZodSchema(col.dataType, col.datapointId, col.required, col.options)
-          output += `  ${col.datapointId}: ${schema},\n`
-        })
-        output += `})\n\n`
-      }
-    }
-    
-    const schema = generateZodSchema(
-      datapoint.dataType,
-      datapoint.datapointId,
-      datapoint.required,
-      datapoint.options,
-      datapoint.minRows,
-      datapoint.maxRows
-    )
-    output += `export const ${datapoint.datapointId}Schema = ${schema}\n\n`
-  })
-  
-  // Complete module schema
-  output += `// Complete module schema\n`
-  output += `export const ${moduleCode.toLowerCase()}ModuleSchema = z.object({\n`
-  
-  allDatapoints.forEach(datapoint => {
-    output += `  ${datapoint.datapointId}: ${datapoint.datapointId}Schema,\n`
-  })
-  
-  output += `})\n\n`
-  output += `export type ${moduleCode}FormData = z.infer<typeof ${moduleCode.toLowerCase()}ModuleSchema>\n`
-  
-  return output
-}
-
-async function main() {
-  // Load data model
-  const dataModelPath = path.join(process.cwd(), 'docs/data-model/vsme-data-model-spec.json')
-  const dataModel: DataModel = JSON.parse(fs.readFileSync(dataModelPath, 'utf-8'))
-  
-  // Output directory
-  const outputDir = path.join(process.cwd(), 'frontend/src/domains/report/schemas')
-  fs.mkdirSync(outputDir, { recursive: true })
-  
-  // Generate schemas for all modules
-  const allModules = [
-    ...dataModel.coreReport.basicModules,
-    ...dataModel.coreReport.comprehensiveModules
-  ]
-  
-  allModules.forEach(module => {
-    const schemaCode = generateModuleSchema(module)
-    const outputPath = path.join(outputDir, `${module.moduleCode.toLowerCase()}-schema.ts`)
-    fs.writeFileSync(outputPath, schemaCode)
-    console.log(`✓ Generated schema: ${module.moduleCode}`)
-  })
-  
-  console.log(`\n✅ Generated ${allModules.length} Zod schemas`)
-}
-
-main().catch(console.error)
-```
+**Acceptance Criteria**:
+- [ ] All dataTypes mapped to correct Zod schemas
+- [ ] Required/optional handled correctly
+- [ ] Validation rules (min, max, pattern) applied
+- [ ] Select options generate `z.enum()`
+- [ ] Array datapoints generate array schemas
+- [ ] Generated file has no TypeScript errors
+- [ ] Can import and use schemas in forms
 
 ---
 
-## 2. i18n Key Extraction
+### R2: i18n Key Extraction
+**What**: Generate i18n translation keys from the VSME data model.
 
-### Goal
-Extract all translation keys from the data model and generate JSON files for de/en.
+**Why**: 
+- Avoid manual translation key definition
+- Ensure all labels/descriptions have translations
+- Support English (primary) and German (secondary)
 
-### Output Structure
+**Input**: `docs/data-model/vsme-data-model-spec.json`
+
+**Output**: 
+- `frontend/src/locales/en/vsme.json`
+- `frontend/src/locales/de/vsme.json`
+
+**Generated Content**:
+
+#### 2.1 Module Names
 ```json
-// frontend/src/i18n/de/modules/b1.json
 {
   "modules": {
-    "b1": {
-      "title": "Grundlagen der Berichtserstellung",
-      "description": "Basisinformationen über das Unternehmen",
-      "disclosures": {
-        "xbrl_info": {
-          "title": "Für XBRL notwendige Informationen",
-          "datapoints": {
-            "entity_name": {
-              "label": "Name des berichterstattenden Unternehmens",
-              "info": "Vollständiger rechtlicher Name des Unternehmens"
-            },
-            "currency": {
-              "label": "Währung der monetären Werte",
-              "options": {
-                "EUR": "Euro",
-                "USD": "US-Dollar",
-                "GBP": "Britisches Pfund"
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### Implementation Script
-
-```typescript
-// scripts/generate-i18n-keys.ts
-
-interface TranslationOutput {
-  modules: Record<string, ModuleTranslation>
-}
-
-interface ModuleTranslation {
-  title: string
-  description: string
-  disclosures: Record<string, DisclosureTranslation>
-}
-
-interface DisclosureTranslation {
-  title: string
-  datapoints: Record<string, DatapointTranslation>
-}
-
-interface DatapointTranslation {
-  label: string
-  info?: string
-  options?: Record<string, string>
-}
-
-function extractTranslations(module: Module, language: 'en' | 'de'): ModuleTranslation {
-  const translation: ModuleTranslation = {
-    title: module.moduleName[language],
-    description: module.description?.[language] || '',
-    disclosures: {}
-  }
-  
-  module.disclosures.forEach(disclosure => {
-    const disclosureKey = disclosure.disclosureId.replace(/-/g, '_')
-    
-    translation.disclosures[disclosureKey] = {
-      title: disclosure.disclosureName[language],
-      datapoints: {}
-    }
-    
-    disclosure.datapoints.forEach(datapoint => {
-      const datapointKey = datapoint.datapointId
-      
-      translation.disclosures[disclosureKey].datapoints[datapointKey] = {
-        label: datapoint.label[language],
-        info: datapoint.description?.[language]
-      }
-      
-      // Extract options if present
-      if (datapoint.options) {
-        translation.disclosures[disclosureKey].datapoints[datapointKey].options = {}
-        datapoint.options.forEach(option => {
-          translation.disclosures[disclosureKey].datapoints[datapointKey].options![option.value] = 
-            option.label[language]
-        })
-      }
-    })
-  })
-  
-  return translation
-}
-
-async function main() {
-  const dataModelPath = path.join(process.cwd(), 'docs/data-model/vsme-data-model-spec.json')
-  const dataModel: DataModel = JSON.parse(fs.readFileSync(dataModelPath, 'utf-8'))
-  
-  const allModules = [
-    ...dataModel.coreReport.basicModules,
-    ...dataModel.coreReport.comprehensiveModules
-  ]
-  
-  // Generate for both languages
-  for (const lang of ['de', 'en'] as const) {
-    const outputDir = path.join(process.cwd(), `frontend/src/i18n/${lang}/modules`)
-    fs.mkdirSync(outputDir, { recursive: true })
-    
-    allModules.forEach(module => {
-      const translation = extractTranslations(module, lang)
-      const output: TranslationOutput = {
-        modules: {
-          [module.moduleCode.toLowerCase()]: translation
-        }
-      }
-      
-      const outputPath = path.join(outputDir, `${module.moduleCode.toLowerCase()}.json`)
-      fs.writeFileSync(outputPath, JSON.stringify(output, null, 2))
-      console.log(`✓ Generated ${lang}/${module.moduleCode}.json`)
-    })
-  }
-  
-  // Generate validation messages
-  const validationMessages = {
-    de: {
-      validation: {
-        required: 'Dieses Feld ist erforderlich',
-        invalid_email: 'Ungültige E-Mail-Adresse',
-        invalid_url: 'Ungültige URL',
-        must_be_number: 'Muss eine Zahl sein',
-        must_be_positive: 'Muss positiv sein',
-        invalid_date: 'Ungültiges Datumsformat (YYYY-MM-DD)',
-        invalid_option: 'Ungültige Auswahl',
-        min_items: 'Mindestens ein Eintrag erforderlich',
-        max_items: 'Maximale Anzahl überschritten',
-        max_length: 'Text zu lang'
-      }
+    "B1": {
+      "name": "General Information",
+      "description": "Basic information about the entity"
     },
-    en: {
-      validation: {
-        required: 'This field is required',
-        invalid_email: 'Invalid email address',
-        invalid_url: 'Invalid URL',
-        must_be_number: 'Must be a number',
-        must_be_positive: 'Must be positive',
-        invalid_date: 'Invalid date format (YYYY-MM-DD)',
-        invalid_option: 'Invalid selection',
-        min_items: 'At least one entry required',
-        max_items: 'Maximum number exceeded',
-        max_length: 'Text too long'
+    "B2": {
+      "name": "Revenue and Employees",
+      "description": "..."
+    }
+  }
+}
+```
+
+#### 2.2 Disclosure Names
+```json
+{
+  "disclosures": {
+    "B1-1": {
+      "name": "Entity Details",
+      "description": "Legal name, form, registration"
+    }
+  }
+}
+```
+
+#### 2.3 Datapoint Labels
+```json
+{
+  "datapoints": {
+    "entityName": {
+      "label": "Entity Name",
+      "description": "The legal name of the entity",
+      "placeholder": "e.g., Example GmbH",
+      "helpText": "Enter the full legal name as registered"
+    },
+    "legalForm": {
+      "label": "Legal Form",
+      "description": "The legal structure of the entity",
+      "options": {
+        "GmbH": "Limited Liability Company (GmbH)",
+        "AG": "Stock Corporation (AG)",
+        "UG": "Mini GmbH (UG)"
       }
     }
   }
-  
-  for (const lang of ['de', 'en'] as const) {
-    const outputPath = path.join(process.cwd(), `frontend/src/i18n/${lang}/validation.json`)
-    fs.writeFileSync(outputPath, JSON.stringify(validationMessages[lang], null, 2))
+}
+```
+
+#### 2.4 Validation Error Messages
+```json
+{
+  "validation": {
+    "required": "This field is required",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters allowed",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidUrl": "Please enter a valid URL",
+    "invalidDate": "Please enter a date in format YYYY-MM-DD",
+    "min": "Minimum value is {min}",
+    "max": "Maximum value is {max}"
   }
-  
-  console.log(`\n✅ Generated i18n keys for ${allModules.length} modules`)
 }
-
-main().catch(console.error)
 ```
+
+**Source Priority**:
+1. Use `label` and `description` from data model if present
+2. Generate from `datapointId` if not present (e.g., "entityName" → "Entity Name")
+3. Leave translation values empty if no source available (to be filled manually)
+
+**Language Support**:
+- **English (en)**: Primary language, generated from data model
+- **German (de)**: Secondary language, copy English structure but leave values empty for manual translation
+
+**Acceptance Criteria**:
+- [ ] All modules have name + description keys
+- [ ] All disclosures have name + description keys
+- [ ] All datapoints have label + description + helpText keys
+- [ ] Select options have translation keys
+- [ ] Validation messages have translation keys
+- [ ] English file has all values filled
+- [ ] German file has same structure but empty values
+- [ ] Can use with react-i18next in forms
 
 ---
 
-## 3. TypeScript Type Generation
+### R3: TypeScript Type Generation (Optional)
+**What**: Generate TypeScript types for the report data structure.
 
-### Goal
-Generate TypeScript interfaces from data model (optional - types already exist in vsme-api-types.ts).
+**Why**: Type-safe data access, autocomplete in IDE, catch errors at compile-time.
 
-### Output
+**Input**: `docs/data-model/vsme-data-model-spec.json`
+
+**Output**: `frontend/src/types/vsme-generated-types.ts`
+
+**Expected Output Example**:
 ```typescript
-// Generated types (if needed beyond existing vsme-api-types.ts)
-export interface B1ModuleData {
-  entityName: string
-  entityIdentifier: string
-  currency: 'EUR' | 'USD' | 'GBP' | 'CHF'
-  // ... all other fields
+export type DatapointValue = string | number | boolean | Date | null
+
+export interface DatapointData {
+  datapointId: string
+  value: DatapointValue
+}
+
+export interface DisclosureData {
+  disclosureId: string
+  datapoints: DatapointData[]
+}
+
+export interface ModuleData {
+  moduleCode: string
+  disclosures: DisclosureData[]
+}
+
+export interface VsmeReportData {
+  reportMetadata: ReportMetadata
+  basicModules: ModuleData[]
+  comprehensiveModules: ModuleData[]
+}
+
+// Specific types for each module
+export interface B1ModuleData extends ModuleData {
+  moduleCode: "B1"
+  // ... specific structure
 }
 ```
 
-**Note**: Since we already have `frontend/src/types/vsme-api-types.ts`, this might not be necessary. The Zod schemas can infer types with `z.infer<>`.
+**Acceptance Criteria**:
+- [ ] Generated types match data model structure
+- [ ] No TypeScript errors
+- [ ] Can import and use types in components
 
 ---
 
-## 4. Script Execution
+## 2. Technical Constraints
 
-### Package.json Scripts
+### C1: Programming Language
+**Must Use**: TypeScript (Node.js)
+
+**Reasoning**: 
+- Frontend is TypeScript
+- Easy to run via npm script
+- Good JSON parsing libraries
+
+### C2: Script Location
+**Must**: Place in `scripts/` directory (root)
+
+**File Names**:
+- `scripts/generate-zod-schemas.ts`
+- `scripts/generate-i18n-keys.ts`
+
+### C3: Execution
+**Must**: Add npm scripts to `package.json`
 
 ```json
 {
@@ -521,74 +339,184 @@ export interface B1ModuleData {
 }
 ```
 
-### When to Run
+### C4: Dependencies
+**May Use**:
+- `tsx`: For running TypeScript scripts
+- `@types/node`: For Node.js types
+- `zod`: For understanding Zod schema structure (but not for runtime)
 
-- **Initially**: Once to generate all schemas and translations
-- **On Data Model Change**: Whenever `vsme-data-model-spec.json` is updated
-- **CI/CD**: Optionally in build pipeline to ensure generated code is up-to-date
-
----
-
-## 5. Implementation Checklist
-
-- [ ] Create `scripts/generate-zod-schemas.ts`
-- [ ] Implement Zod schema generator logic
-- [ ] Handle all data types (text, number, date, boolean, select, table)
-- [ ] Create `scripts/generate-i18n-keys.ts`
-- [ ] Implement i18n extraction logic
-- [ ] Generate de/en JSON files
-- [ ] Add npm scripts to package.json
-- [ ] Test generated schemas with React Hook Form
-- [ ] Test generated i18n keys with i18next
-- [ ] Document usage in README
+**Must Not**:
+- Use external code generation frameworks (keep it simple)
+- Require Java/Python (keep it in TypeScript ecosystem)
 
 ---
 
-## 6. Usage Example
+## 3. Architecture Guidance
 
-### Using Generated Schema in Form
+### Recommended Approach
 
-```typescript
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { b1ModuleSchema, type B1FormData } from '@/domains/report/schemas/b1-schema'
+#### Step 1: Parse Data Model
+- Read `vsme-data-model-spec.json`
+- Parse JSON into typed structure
+- Validate JSON structure (basic checks)
 
-export function B1Form() {
-  const { register, handleSubmit, formState: { errors } } = useForm<B1FormData>({
-    resolver: zodResolver(b1ModuleSchema)
-  })
-  
-  const onSubmit = (data: B1FormData) => {
-    console.log('Valid data:', data)
-  }
-  
-  return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <input {...register('entityName')} />
-      {errors.entityName && <span>{errors.entityName.message}</span>}
-    </form>
-  )
+#### Step 2: Transform to Target Format
+- Iterate modules → disclosures → datapoints
+- Apply mapping rules (dataType → Zod schema)
+- Handle special cases (arrays, enums, validations)
+
+#### Step 3: Generate Code
+- Use template strings to generate TypeScript code
+- Ensure proper imports at top of file
+- Add header comment (auto-generated, do not edit)
+
+#### Step 4: Write File
+- Write to target file path
+- Pretty-print/format (optional but nice)
+- Log success message
+
+### Error Handling
+- If data model file not found → Clear error message
+- If JSON invalid → Show parsing error
+- If unknown dataType → Warn but continue (use z.any())
+
+### Logging
+- Log number of modules/datapoints processed
+- Log output file path
+- Log any warnings (unknown dataTypes, missing fields)
+
+---
+
+## 4. Integration Points
+
+### I1: Data Model
+**Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**Expected Structure**:
+```json
+{
+  "basicModules": [
+    {
+      "moduleCode": "B1",
+      "moduleName": "...",
+      "disclosures": [
+        {
+          "disclosureId": "B1-1",
+          "datapoints": [
+            {
+              "datapointId": "entityName",
+              "label": "Entity Name",
+              "dataType": "text",
+              "required": true,
+              "validation": { "maxLength": 255 }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```
 
-### Using Generated i18n Keys
+### I2: React Hook Form
+**Usage in Forms**:
+```typescript
+import { b1ModuleSchema } from '@/schemas/vsme-zod-schemas'
+import { zodResolver } from '@hookform/resolvers/zod'
 
+const form = useForm({
+  resolver: zodResolver(b1ModuleSchema)
+})
+```
+
+### I3: i18n (react-i18next)
+**Usage in Components**:
 ```typescript
 import { useTranslation } from 'react-i18next'
 
-export function B1Form() {
-  const { t } = useTranslation()
-  
-  return (
-    <div>
-      <h2>{t('modules.b1.title')}</h2>
-      <Label>{t('modules.b1.disclosures.xbrl_info.datapoints.entity_name.label')}</Label>
-    </div>
-  )
-}
+const { t } = useTranslation('vsme')
+<Label>{t('datapoints.entityName.label')}</Label>
 ```
 
 ---
 
-**Next Steps**: Implement scripts, test generated code, integrate with forms.
+## 5. Non-Requirements
 
+**Explicitly NOT part of this specification**:
+- ❌ Runtime code generation (only build-time)
+- ❌ Validation of generated code (assume correct)
+- ❌ Hot-reload on data model change
+- ❌ Visual code generator UI
+- ❌ Migration scripts for schema changes
+- ❌ Backward compatibility for old schemas
+
+---
+
+## 6. Testing Requirements
+
+### Manual Testing (Required)
+- Run `npm run generate:schemas`
+- Check output file exists and has no errors
+- Import schema in a test component
+- Verify validation works
+
+### Automated Testing (Optional)
+- Unit test for dataType mapping logic
+- Snapshot test for generated output
+
+---
+
+## 7. Maintenance
+
+### When to Re-run Generation
+- After changes to data model JSON
+- After adding new modules/datapoints
+- After changing validation rules
+
+### Versioning
+- Add version number to generated file header
+- Match version to data model version
+
+### Generated File Header
+```typescript
+/**
+ * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
+ * Generated from: docs/data-model/vsme-data-model-spec.json
+ * Generated at: 2025-11-17T10:30:00Z
+ * Data Model Version: 1.0.0
+ * Generator: scripts/generate-zod-schemas.ts
+ */
+```
+
+---
+
+## 8. Success Metrics
+
+**Definition of Done**:
+- [ ] Script runs without errors
+- [ ] Output file generated with correct content
+- [ ] All dataTypes mapped to Zod schemas
+- [ ] All validation rules applied
+- [ ] i18n keys extracted for all labels
+- [ ] Can import and use in forms
+- [ ] Form validation works with generated schemas
+- [ ] i18n displays translated labels
+
+---
+
+## 9. Data Model Reference
+
+**Primary Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**Schema Definition**: Defined in data model documentation
+
+**Total Scope**:
+- 20 modules (11 basic + 9 comprehensive)
+- 797 datapoints
+- ~200 validation rules
+
+---
+
+**Implementation Freedom**: Choose code generation approach (templates, AST manipulation, simple string building) that works best, as long as output meets requirements.
+
+**Questions?** Clarify with team before implementation if any requirement is unclear.

@@ -2,209 +2,91 @@
 
 **Version**: 1.0.0  
 **Status**: Active  
-**Last Updated**: 2025-11-17
+**Last Updated**: 2025-11-17  
+**Type**: Requirements Specification
 
 ---
 
 ## Overview
 
-This specification defines how the backend integrates with Apache POI to generate VSME Excel reports by:
-1. Loading the template as a singleton at Spring Boot startup
-2. Resolving Named Ranges to write datapoint values
-3. Handling repeating data (arrays) with row iteration
+This specification defines the **requirements** for backend Excel report generation. It describes **WHAT** the system must achieve, not **HOW** to implement it.
 
 ---
 
-## 1. Template Loading Strategy
+## 1. Requirements
 
-### Requirement
-Load `VSME-Digital-Template-1.1.0.xlsx` once at application startup and keep it in memory as a singleton bean.
+### R1: Template Loading
+**What**: The VSME Excel template must be loaded efficiently and be available for all export requests.
 
-### Implementation
+**Why**: Avoid loading the 8MB template file on every request (performance).
 
-#### Spring Configuration
-```kotlin
-@Configuration
-class ExcelTemplateConfig {
-    
-    @Bean
-    @Singleton
-    fun vsmeTemplateWorkbook(): Workbook {
-        val templatePath = "VSME-Digital-Template-1.1.0.xlsx"
-        val inputStream = FileInputStream(templatePath)
-        
-        return WorkbookFactory.create(inputStream).also {
-            inputStream.close()
-            logger.info("VSME Excel template loaded successfully with ${it.numberOfSheets} sheets")
-        }
-    }
-    
-    companion object {
-        private val logger = LoggerFactory.getLogger(ExcelTemplateConfig::class.java)
-    }
-}
-```
+**Functional Requirements**:
+- Template file: `VSME-Digital-Template-1.1.0.xlsx` (root directory)
+- Load template once at application startup
+- Keep template in memory for duration of application lifecycle
+- All export requests use the same template instance (but thread-safe copies)
 
-#### Template Cloning per Request
-```kotlin
-@Service
-class ExcelGenerationService(
-    private val templateWorkbook: Workbook
-) {
-    
-    fun generateReport(request: ExcelExportRequest): ByteArray {
-        // Clone template for thread-safety
-        val workbook = cloneWorkbook(templateWorkbook)
-        
-        // Process request...
-        writeDatapoints(workbook, request)
-        
-        // Convert to bytes
-        return workbookToBytes(workbook)
-    }
-    
-    private fun cloneWorkbook(source: Workbook): Workbook {
-        val baos = ByteArrayOutputStream()
-        source.write(baos)
-        val bais = ByteArrayInputStream(baos.toByteArray())
-        return WorkbookFactory.create(bais)
-    }
-}
-```
+**Non-Functional Requirements**:
+- **Performance**: Template loading ≤ 500ms at startup
+- **Memory**: Single template in memory (~8-10 MB)
+- **Thread-Safety**: Multiple concurrent requests must not corrupt template
 
-### Benefits
-- **Performance**: Template loaded once, not per request
-- **Thread-Safety**: Each request gets a clone
-- **Memory Efficient**: Shared template, only cloned when needed
+**Acceptance Criteria**:
+- [ ] Template loads successfully at Spring Boot startup
+- [ ] Application logs confirm template loaded (sheet count, named ranges count)
+- [ ] If template file missing/corrupt, application fails to start with clear error
+- [ ] Multiple concurrent requests do not interfere with each other
+- [ ] Memory usage stable over time (no leaks from template cloning)
 
 ---
 
-## 2. Named Range Resolution
+### R2: Named Range Resolution
+**What**: Map datapoint values from frontend request to specific cells in Excel via Named Ranges.
 
-### Overview
-The VSME template contains **797 Named Ranges**. Each datapoint in the request maps to a Named Range.
+**Why**: The VSME template uses 797 Named Ranges to identify data entry points. Direct cell addressing (e.g., "D3") is fragile and error-prone.
 
-**Data Model Reference**: `docs/data-model/vsme-data-model-spec.json`
+**Functional Requirements**:
+- Read datapoint-to-Named Range mappings from `docs/data-model/vsme-data-model-spec.json`
+- Resolve Named Range to actual cell reference at runtime
+- Write value to resolved cell based on dataType
+- Support all dataTypes: text, number, date, boolean, select, url, email
 
-### Named Range Structure
+**Data Type Handling**:
+| DataType | Excel Cell Type | Validation |
+|----------|----------------|------------|
+| text, textarea, url, email | String | None (write as-is) |
+| number | Numeric | Must be valid number |
+| date | String (YYYY-MM-DD) | Must match date format |
+| boolean | Boolean | true/false |
+| select | String | Value from allowed options |
 
-Example from data model:
-```json
-{
-  "datapointId": "entityName",
-  "excelNamedRange": "NameOfReportingEntity",
-  "excelReference": "'General Information'!$D$3",
-  "dataType": "text",
-  "required": true
-}
-```
+**Error Scenarios**:
+- Named Range not found in template → Clear error message
+- Datapoint has no mapping → Clear error message
+- Invalid data type → Clear error message with expected type
 
-### Implementation Strategy
-
-#### Step 1: Create Mapping Configuration
-```kotlin
-data class NamedRangeMapping(
-    val datapointId: String,
-    val excelNamedRange: String,
-    val dataType: DataType
-)
-
-@Component
-class NamedRangeMappingLoader {
-    
-    @PostConstruct
-    fun loadMappings() {
-        // Load from docs/data-model/vsme-data-model-spec.json
-        val mappings = parseDataModelSpec()
-        mappingCache.putAll(mappings)
-    }
-    
-    private val mappingCache = ConcurrentHashMap<String, NamedRangeMapping>()
-    
-    fun getMapping(datapointId: String): NamedRangeMapping? {
-        return mappingCache[datapointId]
-    }
-}
-```
-
-#### Step 2: Write Datapoint to Named Range
-```kotlin
-@Service
-class DatapointWriter(
-    private val mappingLoader: NamedRangeMappingLoader
-) {
-    
-    fun writeDatapoint(
-        workbook: Workbook,
-        datapointId: String,
-        value: Any?
-    ) {
-        // Get mapping
-        val mapping = mappingLoader.getMapping(datapointId) 
-            ?: throw IllegalArgumentException("No mapping for $datapointId")
-        
-        // Resolve Named Range
-        val namedRange = workbook.getName(mapping.excelNamedRange)
-            ?: throw IllegalStateException("Named Range ${mapping.excelNamedRange} not found")
-        
-        // Get cell reference
-        val areaRef = AreaReference(namedRange.refersToFormula, SpreadsheetVersion.EXCEL2007)
-        val cellRef = areaRef.firstCell
-        
-        // Get sheet and cell
-        val sheet = workbook.getSheet(cellRef.sheetName)
-        val cell = sheet.getRow(cellRef.row)?.getCell(cellRef.col.toInt()) 
-            ?: sheet.createRow(cellRef.row).createCell(cellRef.col.toInt())
-        
-        // Write value based on type
-        writeValueToCell(cell, value, mapping.dataType)
-    }
-    
-    private fun writeValueToCell(cell: Cell, value: Any?, dataType: DataType) {
-        when (dataType) {
-            DataType.TEXT, DataType.TEXTAREA, DataType.URL, DataType.EMAIL -> 
-                cell.setCellValue(value?.toString() ?: "")
-            DataType.NUMBER -> 
-                cell.setCellValue((value as? Number)?.toDouble() ?: 0.0)
-            DataType.DATE -> 
-                cell.setCellValue(parseDate(value?.toString()))
-            DataType.BOOLEAN -> 
-                cell.setCellValue(value as? Boolean ?: false)
-            DataType.SELECT -> 
-                cell.setCellValue(value?.toString() ?: "")
-        }
-    }
-}
-```
-
-### Best Practice: Batch Writing
-```kotlin
-fun writeModule(workbook: Workbook, module: ModuleDataRequest) {
-    module.datapoints.forEach { datapoint ->
-        when {
-            datapoint.isTable() -> writeTableDatapoint(workbook, datapoint)
-            else -> writeSimpleDatapoint(workbook, datapoint)
-        }
-    }
-}
-```
+**Acceptance Criteria**:
+- [ ] All 797 Named Ranges from data model are loaded at startup
+- [ ] Lookup is fast (O(1) via HashMap or similar)
+- [ ] Writing "Test GmbH" to datapoint "entityName" writes to correct cell
+- [ ] All dataTypes write correctly to their target cells
+- [ ] Invalid Named Range throws meaningful exception
+- [ ] Missing datapoint mapping throws meaningful exception
 
 ---
 
-## 3. Repeating Data (Arrays) Handling
+### R3: Repeating Data (Arrays) Handling
+**What**: Write arrays/lists to multiple Excel rows.
 
-### Challenge
-Some datapoints are tables/arrays that need to be written across multiple rows.
+**Why**: Some disclosures require multiple entries (e.g., list of sites, list of subsidiaries).
 
-**Example**: `listOfSites` in B1 module
-```typescript
-listOfSites: [
-  { siteId: "HQ-01", siteName: "Headquarters", siteCity: "Berlin" },
-  { siteId: "FAC-02", siteName: "Factory", siteCity: "Munich" }
-]
-```
+**Functional Requirements**:
+- Read repeating data patterns from `docs/data-model/vsme-repeating-data-patterns.json`
+- Each pattern defines: excelStartRow, maxRows, columns
+- Write each array item to a separate row
+- Respect maxRows limit
 
-### Configuration from Data Model
+**Example Pattern**:
 ```json
 {
   "patternId": "list-of-sites",
@@ -218,211 +100,207 @@ listOfSites: [
 }
 ```
 
-### Implementation
+**Row Iteration Logic**:
+- Item 1 → Row 109
+- Item 2 → Row 110
+- Item N → Row (109 + N - 1)
 
-#### Load Repeating Data Patterns
-```kotlin
-@Component
-class RepeatingDataPatternLoader {
-    
-    private val patterns = mutableMapOf<String, RepeatingDataPattern>()
-    
-    @PostConstruct
-    fun loadPatterns() {
-        // Load from docs/data-model/vsme-repeating-data-patterns.json
-        val json = File("docs/data-model/vsme-repeating-data-patterns.json").readText()
-        val config = objectMapper.readValue<RepeatingDataConfig>(json)
-        
-        config.repeatingDataPatterns.forEach { pattern ->
-            patterns[pattern.patternId] = pattern
-        }
-    }
-    
-    fun getPattern(datapointId: String): RepeatingDataPattern? {
-        return patterns[datapointId]
-    }
-}
-```
+**Validation**:
+- Array length ≤ maxRows
+- All required columns present
 
-#### Write Table Datapoint
-```kotlin
-fun writeTableDatapoint(
-    workbook: Workbook,
-    datapointId: String,
-    items: List<Map<String, Any?>>
-) {
-    val pattern = patternLoader.getPattern(datapointId)
-        ?: throw IllegalArgumentException("No pattern for $datapointId")
-    
-    // Validate max rows
-    if (items.size > pattern.maxRows) {
-        throw IllegalArgumentException("Too many items: ${items.size} > ${pattern.maxRows}")
-    }
-    
-    val sheet = workbook.getSheet(pattern.excelSheet)
-    
-    // Write each item to a row
-    items.forEachIndexed { index, item ->
-        val targetRow = pattern.excelStartRow + index
-        val row = sheet.getRow(targetRow) ?: sheet.createRow(targetRow)
-        
-        // Write each column
-        pattern.columns.forEach { column ->
-            val value = item[column.datapointId]
-            val cell = row.getCell(columnLetterToIndex(column.excelColumn))
-                ?: row.createCell(columnLetterToIndex(column.excelColumn))
-            
-            writeValueToCell(cell, value, column.dataType)
-        }
-    }
-}
-
-private fun columnLetterToIndex(column: String): Int {
-    return column.first().code - 'A'.code
-}
-```
+**Acceptance Criteria**:
+- [ ] Array with 3 items writes to 3 consecutive rows
+- [ ] Columns map to correct Excel columns (C, D, F, etc.)
+- [ ] Exceeding maxRows throws validation error
+- [ ] Empty array writes nothing (no error)
+- [ ] All 10 repeating patterns from data model supported
 
 ---
 
-## 4. Complete Flow
+### R4: Complete Report Generation Flow
+**What**: End-to-end process from request to Excel file.
 
-### Request Processing Flow
+**Flow**:
 ```
-1. Request arrives: ExcelExportRequest
-   └─> Contains: basicModules, comprehensiveModules
-
-2. Clone template workbook
-   └─> Thread-safe copy for this request
-
-3. For each module in request:
-   └─> For each datapoint:
-       ├─> Is simple datapoint?
-       │   └─> Lookup Named Range
-       │       └─> Resolve to cell
-       │           └─> Write value
-       │
-       └─> Is table datapoint?
-           └─> Lookup repeating pattern
-               └─> Iterate items
-                   └─> Write to rows (startRow + index)
-
-4. Convert workbook to bytes
-   └─> ByteArrayOutputStream
-
-5. Encode to Base64
-   └─> Return in ExcelExportResponse
+Request → Validate → Clone Template → Write Data → Convert to Bytes → Encode Base64 → Response
 ```
 
-### Error Handling
-```kotlin
-sealed class ExcelGenerationError : Exception() {
-    class NamedRangeNotFound(val rangeName: String) : 
-        ExcelGenerationError()
-    
-    class DatapointMappingNotFound(val datapointId: String) : 
-        ExcelGenerationError()
-    
-    class MaxRowsExceeded(val datapointId: String, val count: Int, val max: Int) : 
-        ExcelGenerationError()
-    
-    class InvalidDataType(val expected: DataType, val actual: Any?) : 
-        ExcelGenerationError()
-}
-```
+**Input**: `ExcelExportRequest` (JSON)
+- reportMetadata
+- basicModules[] (array of ModuleDataRequest)
+- comprehensiveModules[] (optional array)
+
+**Output**: `ExcelExportResponse` (JSON)
+- success: boolean
+- message: string
+- timestamp: string
+- excelFileBase64: string (if success)
+- validationErrors: array (if validation fails)
+
+**Acceptance Criteria**:
+- [ ] Valid request generates Excel file
+- [ ] Excel file is valid (opens in Microsoft Excel)
+- [ ] All written values are correct (manual verification)
+- [ ] Invalid request returns validation errors (not 500 error)
+- [ ] Large requests (all modules filled) complete in < 3 seconds
 
 ---
 
-## 5. Performance Considerations
+## 2. Technical Constraints
 
-### Optimization Strategies
-1. **Template Caching**: Load once at startup ✅
-2. **Mapping Cache**: Preload all mappings into ConcurrentHashMap ✅
-3. **Lazy Sheet Loading**: Only access sheets when needed
-4. **Batch Writes**: Write all datapoints before saving
-5. **Stream Response**: Stream bytes directly to response
+### C1: Technology Stack
+**Must Use**:
+- Apache POI library for Excel manipulation
+- Spring Boot dependency injection
+- Kotlin as implementation language
 
-### Expected Performance
-- **Template Loading**: ~500ms (once at startup)
-- **Report Generation**: 
-  - Basic Report: < 2 seconds
-  - Comprehensive Report: < 3 seconds
+**Reasoning**: Already defined in constitution, proven libraries
 
----
+### C2: Template Integrity
+**Must Not**:
+- Modify the original template file on disk
+- Change template structure (sheets, Named Ranges)
+- Alter template formulas or formatting
 
-## 6. Testing Strategy
+**Must**:
+- Work with provided template as-is
+- Clone template for each request (thread-safety)
+- Preserve all Excel features (formulas, formatting, validation)
 
-### Unit Tests
-```kotlin
-@Test
-fun `should write simple datapoint to named range`() {
-    val workbook = createTestWorkbook()
-    val writer = DatapointWriter(mappingLoader)
-    
-    writer.writeDatapoint(workbook, "entityName", "Test GmbH")
-    
-    val cell = getCell(workbook, "'General Information'!D3")
-    assertEquals("Test GmbH", cell.stringCellValue)
-}
-
-@Test
-fun `should write table datapoint to multiple rows`() {
-    val workbook = createTestWorkbook()
-    val items = listOf(
-        mapOf("siteId" to "HQ-01", "siteName" to "HQ"),
-        mapOf("siteId" to "FAC-02", "siteName" to "Factory")
-    )
-    
-    writer.writeTableDatapoint(workbook, "listOfSites", items)
-    
-    val row1 = workbook.getSheet("General Information").getRow(109)
-    assertEquals("HQ-01", row1.getCell(2).stringCellValue) // Column C
-}
-```
-
-### Integration Tests
-```kotlin
-@SpringBootTest
-@Test
-fun `should generate complete VSME report`() {
-    val request = createTestExportRequest()
-    
-    val response = excelService.generateReport(request)
-    
-    assertTrue(response.success)
-    assertNotNull(response.excelFileBase64)
-    
-    // Validate Excel content
-    val workbook = decodeAndLoadWorkbook(response.excelFileBase64!!)
-    assertEntityNameWritten(workbook, "Test Company")
-    assertSitesWritten(workbook, 3)
-}
-```
+### C3: Performance Targets
+- **Startup**: Template loading ≤ 500ms
+- **Basic Report**: Generation ≤ 2 seconds
+- **Comprehensive Report**: Generation ≤ 3 seconds
+- **Memory**: No leaks from repeated requests
 
 ---
 
-## 7. File References
+## 3. Architecture Guidance
 
-**Data Model**: `docs/data-model/vsme-data-model-spec.json`  
-**Repeating Patterns**: `docs/data-model/vsme-repeating-data-patterns.json`  
-**Excel Template**: `VSME-Digital-Template-1.1.0.xlsx`  
-**DTO Definitions**: `backend/src/main/kotlin/org/example/backend/dto/VsmeReportDto.kt`
+**Recommended Pattern**: Hexagonal Architecture
+
+**Suggested Components**:
+1. **Configuration Layer**: Load template at startup
+2. **Mapping Layer**: Load Named Range & repeating data configs
+3. **Writer Layer**: Write values to cells
+4. **Service Layer**: Orchestrate the complete flow
+5. **Controller Layer**: REST endpoint
+
+**Alternative Approaches** (not mandated):
+- Simple service without hexagonal architecture (if team prefers)
+- Direct cell addressing instead of Named Ranges (not recommended)
+- In-memory cache of generated reports (if needed for performance)
+
+**Key Design Principles**:
+- Single Responsibility: Each component has one job
+- Separation of Concerns: Config loading ≠ Writing ≠ API
+- Thread-Safe: No shared mutable state
 
 ---
 
-## 8. Implementation Checklist
+## 4. Integration Points
 
-- [ ] Create `ExcelTemplateConfig` with singleton bean
-- [ ] Create `NamedRangeMappingLoader` component
-- [ ] Create `RepeatingDataPatternLoader` component
-- [ ] Create `DatapointWriter` service
-- [ ] Implement simple datapoint writing
-- [ ] Implement table datapoint writing
-- [ ] Add error handling
-- [ ] Add unit tests
-- [ ] Add integration tests
-- [ ] Validate against real VSME template
+### I1: Data Model
+**Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**What to Extract**:
+- All modules (basicModules, comprehensiveModules)
+- All disclosures per module
+- All datapoints per disclosure
+- excelNamedRange per datapoint
+
+**When**: At application startup (load once)
+
+### I2: Repeating Data Patterns
+**Source**: `docs/data-model/vsme-repeating-data-patterns.json`
+
+**What to Extract**:
+- patternId, excelSheet, excelStartRow, maxRows
+- Column mappings
+
+**When**: At application startup (load once)
+
+### I3: Frontend API
+**Endpoint**: POST `/api/vsme/export`
+
+**Receives**: `ExcelExportRequest` (defined in `VsmeReportDto.kt`)
+
+**Returns**: `ExcelExportResponse` with Base64 encoded Excel
+
+**Error Handling**:
+- Validation errors → 400 Bad Request
+- Server errors → 500 Internal Server Error
+- Missing template → Application won't start
+
+### I4: Excel Template
+**File**: `VSME-Digital-Template-1.1.0.xlsx` (root directory)
+
+**Expected Structure**:
+- 13 sheets (Introduction, Table of Contents, General Information, etc.)
+- 797 Named Ranges
+- Pre-defined formulas and formatting
 
 ---
 
-**Next Steps**: Implement according to this spec, test thoroughly, commit.
+## 5. Non-Requirements
 
+**Explicitly NOT part of this specification**:
+- ❌ Multi-language Excel generation (only English template)
+- ❌ PDF export
+- ❌ Excel validation after generation (assumed template is valid)
+- ❌ Undo/Redo functionality
+- ❌ Partial report generation (must be complete)
+- ❌ Report versioning or history
+- ❌ Direct Excel editing in browser
+- ❌ Real-time collaborative editing
+
+---
+
+## 6. Testing Requirements
+
+### Unit Tests (Recommended)
+- Template loading succeeds
+- Named Range resolution works correctly
+- Data type conversion correct for all types
+- Error handling for missing mappings
+
+### Integration Tests (Required)
+- Complete report generation from sample request
+- Generated Excel opens in Microsoft Excel
+- Verify key datapoints written correctly
+- Performance test (generation time < 3s)
+
+### Acceptance Tests (Required)
+- End-to-end: Frontend → Backend → Excel download
+- Manual verification: Open Excel, check 10 random values
+- Edge cases: Empty arrays, optional fields, all dataTypes
+
+---
+
+## 7. Data Model References
+
+**Primary**: `docs/data-model/vsme-data-model-spec.json`  
+**Secondary**: `docs/data-model/vsme-repeating-data-patterns.json`  
+**Template**: `VSME-Digital-Template-1.1.0.xlsx`  
+**DTOs**: `backend/src/main/kotlin/org/example/backend/dto/VsmeReportDto.kt`
+
+---
+
+## 8. Success Metrics
+
+**Definition of Done**:
+- [ ] Template loads at startup without errors
+- [ ] All 797 Named Ranges resolvable
+- [ ] B1 module (20+ datapoints) writes correctly
+- [ ] B3 module with numeric values writes correctly
+- [ ] List of Sites (array, 3 items) writes to 3 rows
+- [ ] Performance: Basic Report generates in < 2s
+- [ ] Integration test passes
+- [ ] Excel file validated manually
+
+---
+
+**Implementation Freedom**: Development team may choose implementation details not specified here, as long as all requirements and acceptance criteria are met.
+
+**Questions?** Clarify with team before implementation if requirements are unclear.

@@ -215,6 +215,54 @@ All 797 Named Ranges from the Excel template are mapped to datapoints in `docs/d
 - Stepper configuration (6 steps)
 - Complete type definitions
 
+### Hierarchical Structure
+The VSME data model follows a 4-level hierarchy that maps directly to both the **Excel template** and the **UI components**:
+
+```
+Sheet → Module → Disclosure → Datapoint
+  ↓        ↓         ↓           ↓
+Stepper → Area → Card → Input Field
+```
+
+**Detailed Mapping**:
+
+| Data Model Level | Excel Structure | UI Component | Example |
+|------------------|----------------|--------------|---------|
+| **Sheet** | Excel Tab | **Stepper** (Wizard Step) | "General Information" sheet → Stepper #2 |
+| **Module** | Module Section | **Area/Section** in Stepper | B1, B3 modules → Grouped in same stepper |
+| **Disclosure** | Disclosure Block | **Card** Component | "Entity Details" → Card with fields |
+| **Datapoint** | Named Range Cell | **Input Field** | `entityName` → Text input |
+
+**Configuration**: `docs/data-model/vsme-stepper-config.json` defines the 6 wizard steppers and their module mappings.
+
+#### Stepper Structure
+
+The wizard consists of 6 steppers as defined in `vsme-stepper-config.json`:
+
+1. **Introduction** (Informational)
+   - Welcome, VSME explanation, what user needs
+
+2. **General Information** (Core Report)
+   - Modules: B1, B2 (Basic)
+   - Modules: C1, C2 (Comprehensive, conditional)
+
+3. **Environmental Disclosures** (Core Report)
+   - Modules: B3, B4, B5, B6, B7 (Basic)
+   - Modules: C3, C4 (Comprehensive, conditional)
+
+4. **Social Disclosures** (Core Report)
+   - Modules: B8, B9, B10 (Basic)
+   - Modules: C5, C6, C7 (Comprehensive, conditional)
+
+5. **Governance Disclosures** (Core Report)
+   - Modules: B11 (Basic)
+   - Modules: C8, C9 (Comprehensive, conditional)
+
+6. **Review & Export** (Validation)
+   - Summary, validation results, export button
+
+**Conditional Display**: Comprehensive modules (C1-C9) only shown if user selects "Basic & Comprehensive" mode.
+
 ### Code Generation
 Schemas, types, and i18n keys are **generated** from the data model:
 ```bash
@@ -380,8 +428,13 @@ All feature specifications follow requirements-based format (WHAT & WHY, not HOW
   - All Comprehensive Modules (C1-C9)
   - Complete Named Range mappings
   - 10 Repeating data patterns
-  - Stepper configuration
   - Type definitions
+
+- 🗺️ **[`docs/data-model/vsme-stepper-config.json`](../../docs/data-model/vsme-stepper-config.json)**: Wizard UI configuration
+  - 6 stepper definitions (Introduction, General, Environmental, Social, Governance, Review)
+  - Module-to-stepper mappings
+  - Conditional display rules (Basic vs. Comprehensive)
+  - i18n labels and help texts
 
 ### Excel Template
 - 📊 **[`VSME-Digital-Template-1.1.0.xlsx`](../../VSME-Digital-Template-1.1.0.xlsx)**: Official EFRAG template

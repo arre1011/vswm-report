@@ -1,0 +1,498 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "standard": "VSME 1.1.0",
+    "generatedDate": "2025-11-16",
+    "totalComprehensiveModules": 9
+  },
+  "comprehensiveModules": [
+    {
+      "moduleId": "module-c1",
+      "moduleCode": "C1",
+      "moduleName": {
+        "en": "Strategy: Business Model and Sustainability-Related Initiatives",
+        "de": "Strategie: Geschäftsmodell und nachhaltigkeitsbezogene Initiativen"
+      },
+      "description": {
+        "en": "Description of the business model and sustainability-related initiatives",
+        "de": "Beschreibung des Geschäftsmodells und nachhaltigkeitsbezogener Initiativen"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "General Information",
+      "disclosures": [
+        {
+          "disclosureId": "c1-business-model",
+          "disclosureName": {
+            "en": "Description of key elements of strategy",
+            "de": "Beschreibung der Schlüsselelemente der Strategie"
+          },
+          "required": true,
+          "datapoints": [
+            {
+              "datapointId": "strategyDescription",
+              "label": {
+                "en": "Description of key elements of strategy that relate to or affect sustainability issues",
+                "de": "Beschreibung der Schlüsselelemente der Strategie in Bezug auf Nachhaltigkeitsthemen"
+              },
+              "dataType": "textarea",
+              "required": true,
+              "excelNamedRange": "DescriptionOfKeyElementsOfStrategyThatRelatesToOrAffectsSustainabilityIssues"
+            },
+            {
+              "datapointId": "productsAndServices",
+              "label": {
+                "en": "Description of significant groups of products and/or services offered",
+                "de": "Beschreibung wichtiger Produkt- und/oder Dienstleistungsgruppen"
+              },
+              "dataType": "textarea",
+              "required": true,
+              "excelNamedRange": "DescriptionOfSignificantGroupsOfProductsAndOrServicesOffered"
+            },
+            {
+              "datapointId": "significantMarkets",
+              "label": {
+                "en": "Description of significant markets the undertaking operates in",
+                "de": "Beschreibung wichtiger Märkte, in denen das Unternehmen tätig ist"
+              },
+              "dataType": "textarea",
+              "required": true,
+              "excelNamedRange": "DescriptionOfSignificantMarketsTheUndertakingOperatesIn"
+            },
+            {
+              "datapointId": "businessRelationships",
+              "label": {
+                "en": "Description of main business relationships",
+                "de": "Beschreibung der Hauptgeschäftsbeziehungen"
+              },
+              "dataType": "textarea",
+              "required": true,
+              "excelNamedRange": "DescriptionOfMainBusinessRelationships"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c2",
+      "moduleCode": "C2",
+      "moduleName": {
+        "en": "Description of practices, policies and future initiatives",
+        "de": "Beschreibung von Praktiken, Richtlinien und zukünftigen Initiativen"
+      },
+      "description": {
+        "en": "Detailed description of practices, policies and future initiatives for transitioning towards a more sustainable economy",
+        "de": "Detaillierte Beschreibung von Praktiken, Richtlinien und zukünftigen Initiativen für den Übergang zu einer nachhaltigeren Wirtschaft"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "General Information",
+      "disclosures": [
+        {
+          "disclosureId": "c2-practices-policies",
+          "disclosureName": {
+            "en": "Practices, policies and future initiatives",
+            "de": "Praktiken, Richtlinien und zukünftige Initiativen"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "practicesPoliciesDescription",
+              "label": {
+                "en": "Description of practices, policies and/or future initiatives",
+                "de": "Beschreibung von Praktiken, Richtlinien und/oder zukünftigen Initiativen"
+              },
+              "dataType": "textarea",
+              "required": false,
+              "excelNamedRange": "DescriptionOfPracticesPoliciesAndOrFutureInitiatives"
+            },
+            {
+              "datapointId": "targetDescription",
+              "label": {
+                "en": "Description of a target related to a policy",
+                "de": "Beschreibung eines Ziels in Bezug auf eine Richtlinie"
+              },
+              "dataType": "textarea",
+              "required": false,
+              "excelNamedRange": "DescriptionOfATargetRelatedToAPolicy"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c3",
+      "moduleCode": "C3",
+      "moduleName": {
+        "en": "GHG reduction targets and climate transition",
+        "de": "THG-Reduktionsziele und Klimatransition"
+      },
+      "description": {
+        "en": "Greenhouse gas reduction targets and transition plan for climate change mitigation",
+        "de": "Treibhausgasreduktionsziele und Übergangsplan zur Eindämmung des Klimawandels"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Environmental Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c3-ghg-targets",
+          "disclosureName": {
+            "en": "GHG reduction targets",
+            "de": "THG-Reduktionsziele"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "ghgTargetBaselineYear",
+              "label": {
+                "en": "Baseline year for GHG reduction target",
+                "de": "Basisjahr für THG-Reduktionsziel"
+              },
+              "dataType": "number",
+              "required": false,
+              "excelNamedRange": "BaselineYearMember"
+            },
+            {
+              "datapointId": "ghgTargetYear",
+              "label": {
+                "en": "Target year for GHG reduction",
+                "de": "Zieljahr für THG-Reduktion"
+              },
+              "dataType": "number",
+              "required": false,
+              "excelNamedRange": "TargetYearMember"
+            },
+            {
+              "datapointId": "ghgReductionPercentage",
+              "label": {
+                "en": "GHG reduction percentage target",
+                "de": "THG-Reduktionsziel in Prozent"
+              },
+              "dataType": "number",
+              "required": false,
+              "unit": "%"
+            }
+          ]
+        },
+        {
+          "disclosureId": "c3-transition-plan",
+          "disclosureName": {
+            "en": "Transition plan for climate change mitigation",
+            "de": "Übergangsplan zur Eindämmung des Klimawandels"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "transitionPlanDescription",
+              "label": {
+                "en": "Description of transition plan for climate change mitigation",
+                "de": "Beschreibung des Übergangsplans zur Eindämmung des Klimawandels"
+              },
+              "dataType": "textarea",
+              "required": false,
+              "excelNamedRange": "DescriptionOfATransitionPlanForClimateChangeMitigationIncludingAnExplanationOfHowItIsContributingToReduceGhgEmissions"
+            },
+            {
+              "datapointId": "adoptionDateTransitionPlan",
+              "label": {
+                "en": "Date of adoption of transition plan (if not yet adopted)",
+                "de": "Datum der Verabschiedung des Übergangsplans (falls noch nicht verabschiedet)"
+              },
+              "dataType": "date",
+              "required": false,
+              "excelNamedRange": "DateOfAdoptionOfTransitionPlanForUndertakingNotHavingAdoptedTransitionPlanYet"
+            }
+          ]
+        },
+        {
+          "disclosureId": "c3-main-actions",
+          "disclosureName": {
+            "en": "Main actions to achieve targets",
+            "de": "Hauptmaßnahmen zur Zielerreichung"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "mainActionsList",
+              "label": {
+                "en": "List of main actions to achieve GHG reduction targets",
+                "de": "Liste der Hauptmaßnahmen zur Erreichung der THG-Reduktionsziele"
+              },
+              "dataType": "table",
+              "required": false,
+              "minRows": 0,
+              "maxRows": 10,
+              "columns": [
+                {
+                  "datapointId": "actionDescription",
+                  "label": {
+                    "en": "Description of action",
+                    "de": "Beschreibung der Maßnahme"
+                  },
+                  "dataType": "textarea"
+                },
+                {
+                  "datapointId": "expectedImpact",
+                  "label": {
+                    "en": "Expected GHG reduction impact (tCO2e)",
+                    "de": "Erwartete THG-Reduktionswirkung (tCO2e)"
+                  },
+                  "dataType": "number",
+                  "unit": "tCO2e"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c4",
+      "moduleCode": "C4",
+      "moduleName": {
+        "en": "Climate risks",
+        "de": "Klimarisiken"
+      },
+      "description": {
+        "en": "Description of climate-related risks and their potential impacts",
+        "de": "Beschreibung klimabezogener Risiken und ihrer potenziellen Auswirkungen"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Environmental Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c4-climate-risks",
+          "disclosureName": {
+            "en": "Climate-related hazards and transition events",
+            "de": "Klimabezogene Gefahren und Übergangsereignisse"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "climateHazardsDescription",
+              "label": {
+                "en": "Description of climate-related hazards and climate-related transition events",
+                "de": "Beschreibung klimabezogener Gefahren und klimabezogener Übergangsereignisse"
+              },
+              "dataType": "textarea",
+              "required": false,
+              "excelNamedRange": "DescriptionOfClimateRelatedHazardsAndClimateRelatedTransitionEvents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c5",
+      "moduleCode": "C5",
+      "moduleName": {
+        "en": "Additional (general) workforce characteristics",
+        "de": "Zusätzliche (allgemeine) Merkmale der Belegschaft"
+      },
+      "description": {
+        "en": "Additional detailed workforce information beyond basic module requirements",
+        "de": "Zusätzliche detaillierte Informationen zur Belegschaft über die Basismodulanforderungen hinaus"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Social Disclosures",
+      "disclosures": []
+    },
+    {
+      "moduleId": "module-c6",
+      "moduleCode": "C6",
+      "moduleName": {
+        "en": "Additional own workforce information - Human rights policies and processes",
+        "de": "Zusätzliche Informationen zur eigenen Belegschaft - Menschenrechtsrichtlinien und -prozesse"
+      },
+      "description": {
+        "en": "Human rights policies and processes related to own workforce",
+        "de": "Menschenrechtsrichtlinien und -prozesse in Bezug auf die eigene Belegschaft"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Social Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c6-human-rights",
+          "disclosureName": {
+            "en": "Human rights policies and processes",
+            "de": "Menschenrechtsrichtlinien und -prozesse"
+          },
+          "required": true,
+          "datapoints": [
+            {
+              "datapointId": "humanRightsPoliciesDescription",
+              "label": {
+                "en": "Description of human rights policies and processes",
+                "de": "Beschreibung der Menschenrechtsrichtlinien und -prozesse"
+              },
+              "dataType": "textarea",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c7",
+      "moduleCode": "C7",
+      "moduleName": {
+        "en": "Severe negative human rights incidents",
+        "de": "Schwerwiegende negative Menschenrechtsvorfälle"
+      },
+      "description": {
+        "en": "Reporting of severe negative human rights incidents and actions taken",
+        "de": "Berichterstattung über schwerwiegende negative Menschenrechtsvorfälle und ergriffene Maßnahmen"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Social Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c7-incidents",
+          "disclosureName": {
+            "en": "Human rights incidents and actions taken",
+            "de": "Menschenrechtsvorfälle und ergriffene Maßnahmen"
+          },
+          "required": true,
+          "datapoints": [
+            {
+              "datapointId": "numberOfIncidents",
+              "label": {
+                "en": "Number of severe negative human rights incidents",
+                "de": "Anzahl schwerwiegender negativer Menschenrechtsvorfälle"
+              },
+              "dataType": "number",
+              "required": true
+            },
+            {
+              "datapointId": "actionsDescription",
+              "label": {
+                "en": "Description of actions taken to address the confirmed incidents",
+                "de": "Beschreibung der Maßnahmen zur Bewältigung der bestätigten Vorfälle"
+              },
+              "dataType": "textarea",
+              "required": true,
+              "excelNamedRange": "DescriptionOfActionsTakeToAddressTheConfirmedIncidents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c8",
+      "moduleCode": "C8",
+      "moduleName": {
+        "en": "Revenues from certain activities and exclusion from EU reference benchmarks",
+        "de": "Einnahmen aus bestimmten Aktivitäten und Ausschluss von EU-Referenzbenchmarks"
+      },
+      "description": {
+        "en": "Disclosure of revenues from controversial activities and EU benchmark exclusions",
+        "de": "Offenlegung von Einnahmen aus kontroversen Aktivitäten und EU-Benchmark-Ausschlüssen"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Governance Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c8-revenues",
+          "disclosureName": {
+            "en": "Revenues from certain activities",
+            "de": "Einnahmen aus bestimmten Aktivitäten"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "fossilFuelRevenue",
+              "label": {
+                "en": "Revenue from fossil fuel activities",
+                "de": "Einnahmen aus fossilen Brennstoffaktivitäten"
+              },
+              "dataType": "number",
+              "required": false,
+              "unit": "currency"
+            },
+            {
+              "datapointId": "controversialWeaponsRevenue",
+              "label": {
+                "en": "Revenue from controversial weapons",
+                "de": "Einnahmen aus umstrittenen Waffen"
+              },
+              "dataType": "number",
+              "required": false,
+              "unit": "currency"
+            }
+          ]
+        },
+        {
+          "disclosureId": "c8-eu-benchmarks",
+          "disclosureName": {
+            "en": "Exclusion from EU reference benchmarks",
+            "de": "Ausschluss von EU-Referenzbenchmarks"
+          },
+          "required": true,
+          "datapoints": [
+            {
+              "datapointId": "excludedFromEUBenchmarks",
+              "label": {
+                "en": "Undertaking excluded from EU reference benchmarks",
+                "de": "Unternehmen von EU-Referenzbenchmarks ausgeschlossen"
+              },
+              "dataType": "boolean",
+              "required": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "moduleId": "module-c9",
+      "moduleCode": "C9",
+      "moduleName": {
+        "en": "Gender diversity ratio in the governance body",
+        "de": "Geschlechterverhältnis im Leitungsorgan"
+      },
+      "description": {
+        "en": "Gender diversity information for the undertaking's governance body",
+        "de": "Informationen zur Geschlechtervielfalt im Leitungsorgan des Unternehmens"
+      },
+      "moduleType": "comprehensive",
+      "sheet": "Governance Disclosures",
+      "disclosures": [
+        {
+          "disclosureId": "c9-gender-diversity",
+          "disclosureName": {
+            "en": "Gender diversity in governance body",
+            "de": "Geschlechtervielfalt im Leitungsorgan"
+          },
+          "required": false,
+          "datapoints": [
+            {
+              "datapointId": "maleGovernanceMembers",
+              "label": {
+                "en": "Number of male members in governance body",
+                "de": "Anzahl männlicher Mitglieder im Leitungsorgan"
+              },
+              "dataType": "number",
+              "required": false
+            },
+            {
+              "datapointId": "femaleGovernanceMembers",
+              "label": {
+                "en": "Number of female members in governance body",
+                "de": "Anzahl weiblicher Mitglieder im Leitungsorgan"
+              },
+              "dataType": "number",
+              "required": false
+            },
+            {
+              "datapointId": "genderDiversityRatio",
+              "label": {
+                "en": "Gender diversity ratio (%)",
+                "de": "Geschlechterverhältnis (%)"
+              },
+              "dataType": "number",
+              "required": false,
+              "unit": "%"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

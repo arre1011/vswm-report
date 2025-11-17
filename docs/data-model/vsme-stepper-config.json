@@ -1,0 +1,171 @@
+{
+  "metadata": {
+    "title": "VSME Wizard Stepper Configuration",
+    "description": "Configuration for the wizard UI steppers mapping modules to user interface steps",
+    "version": "1.0.0"
+  },
+  "steppers": [
+    {
+      "stepperId": "stepper-introduction",
+      "order": 1,
+      "stepperType": "informational",
+      "title": {
+        "en": "Introduction",
+        "de": "Einführung"
+      },
+      "description": {
+        "en": "Welcome to VSME Easy Report",
+        "de": "Willkommen bei VSME Easy Report"
+      },
+      "icon": "info",
+      "content": {
+        "en": "# Welcome to VSME Easy Report\n\nThis wizard will guide you through creating your VSME (Voluntary Sustainability Reporting Standard for SME) report.\n\n## What is VSME?\n\nVSME is a simplified sustainability reporting standard designed specifically for small and medium-sized enterprises (SMEs). It provides a structured framework for reporting on Environmental, Social, and Governance (ESG) topics.\n\n## How does it work?\n\n1. **Choose your reporting level**: Basic Module Only or Basic & Comprehensive\n2. **Fill in the required information**: We'll guide you step by step\n3. **Review your inputs**: Check everything is correct\n4. **Generate your report**: Download a completed VSME Excel file\n\n## What you'll need:\n\n- Basic company information (legal form, employees, turnover)\n- Energy consumption data\n- Greenhouse gas emissions data (if available)\n- Employee statistics\n- Site locations\n\nLet's get started!",
+        "de": "# Willkommen bei VSME Easy Report\n\nDieser Assistent führt Sie durch die Erstellung Ihres VSME-Berichts (Voluntary Sustainability Reporting Standard for SME).\n\n## Was ist VSME?\n\nVSME ist ein vereinfachter Nachhaltigkeitsberichtsstandard, der speziell für kleine und mittlere Unternehmen (KMU) entwickelt wurde. Er bietet einen strukturierten Rahmen für die Berichterstattung über Umwelt-, Sozial- und Governance-Themen (ESG).\n\n## Wie funktioniert es?\n\n1. **Wählen Sie Ihr Berichtsniveau**: Nur Basismodul oder Basis & Umfassend\n2. **Füllen Sie die erforderlichen Informationen aus**: Wir führen Sie Schritt für Schritt\n3. **Überprüfen Sie Ihre Eingaben**: Stellen Sie sicher, dass alles korrekt ist\n4. **Erstellen Sie Ihren Bericht**: Laden Sie eine ausgefüllte VSME-Excel-Datei herunter\n\n## Was Sie benötigen:\n\n- Grundlegende Unternehmensinformationen (Rechtsform, Mitarbeiter, Umsatz)\n- Energieverbrauchsdaten\n- Treibhausgasemissionsdaten (falls verfügbar)\n- Mitarbeiterstatistiken\n- Standorte\n\nLassen Sie uns beginnen!"
+      }
+    },
+    {
+      "stepperId": "stepper-general-information",
+      "order": 2,
+      "stepperType": "core",
+      "title": {
+        "en": "General Information",
+        "de": "Allgemeine Informationen"
+      },
+      "description": {
+        "en": "Basic company data and reporting framework",
+        "de": "Stammdaten und Berichtsrahmen"
+      },
+      "icon": "building",
+      "modules": ["B1", "B2"],
+      "comprehensiveModules": ["C1", "C2"],
+      "conditionalDisplay": {
+        "comprehensiveModules": {
+          "dependsOn": "basisForPreparation",
+          "showWhen": "Basic & Comprehensive"
+        }
+      },
+      "helpText": {
+        "en": "In this section, you'll provide fundamental information about your company and define the basis for your sustainability report.",
+        "de": "In diesem Abschnitt geben Sie grundlegende Informationen über Ihr Unternehmen an und legen die Grundlage für Ihren Nachhaltigkeitsbericht fest."
+      }
+    },
+    {
+      "stepperId": "stepper-environmental",
+      "order": 3,
+      "stepperType": "core",
+      "title": {
+        "en": "Environmental Disclosures",
+        "de": "Umweltangaben"
+      },
+      "description": {
+        "en": "Energy, emissions, pollution, biodiversity, water, and waste",
+        "de": "Energie, Emissionen, Verschmutzung, Biodiversität, Wasser und Abfall"
+      },
+      "icon": "leaf",
+      "modules": ["B3", "B4", "B5", "B6", "B7"],
+      "comprehensiveModules": ["C3", "C4"],
+      "conditionalDisplay": {
+        "comprehensiveModules": {
+          "dependsOn": "basisForPreparation",
+          "showWhen": "Basic & Comprehensive"
+        }
+      },
+      "helpText": {
+        "en": "Report your environmental impact including energy consumption, greenhouse gas emissions, and resource use.",
+        "de": "Berichten Sie über Ihre Umweltauswirkungen einschließlich Energieverbrauch, Treibhausgasemissionen und Ressourcennutzung."
+      }
+    },
+    {
+      "stepperId": "stepper-social",
+      "order": 4,
+      "stepperType": "core",
+      "title": {
+        "en": "Social Disclosures",
+        "de": "Sozialangaben"
+      },
+      "description": {
+        "en": "Workforce characteristics, health & safety, and human rights",
+        "de": "Belegschaftsmerkmale, Gesundheit & Sicherheit und Menschenrechte"
+      },
+      "icon": "users",
+      "modules": ["B8", "B9", "B10"],
+      "comprehensiveModules": ["C5", "C6", "C7"],
+      "conditionalDisplay": {
+        "comprehensiveModules": {
+          "dependsOn": "basisForPreparation",
+          "showWhen": "Basic & Comprehensive"
+        }
+      },
+      "helpText": {
+        "en": "Provide information about your workforce, including employee statistics, working conditions, and training.",
+        "de": "Geben Sie Informationen über Ihre Belegschaft an, einschließlich Mitarbeiterstatistiken, Arbeitsbedingungen und Schulungen."
+      }
+    },
+    {
+      "stepperId": "stepper-governance",
+      "order": 5,
+      "stepperType": "core",
+      "title": {
+        "en": "Governance Disclosures",
+        "de": "Governance-Angaben"
+      },
+      "description": {
+        "en": "Anti-corruption, business conduct, and board diversity",
+        "de": "Anti-Korruption, Geschäftsverhalten und Vorstandsvielfalt"
+      },
+      "icon": "shield",
+      "modules": ["B11"],
+      "comprehensiveModules": ["C8", "C9"],
+      "conditionalDisplay": {
+        "comprehensiveModules": {
+          "dependsOn": "basisForPreparation",
+          "showWhen": "Basic & Comprehensive"
+        }
+      },
+      "helpText": {
+        "en": "Report on governance matters including anti-corruption measures and board diversity.",
+        "de": "Berichten Sie über Governance-Angelegenheiten einschließlich Anti-Korruptionsmaßnahmen und Vorstandsvielfalt."
+      }
+    },
+    {
+      "stepperId": "stepper-review",
+      "order": 6,
+      "stepperType": "validation",
+      "title": {
+        "en": "Review & Export",
+        "de": "Überprüfung & Export"
+      },
+      "description": {
+        "en": "Review your data and download the VSME report",
+        "de": "Überprüfen Sie Ihre Daten und laden Sie den VSME-Bericht herunter"
+      },
+      "icon": "download",
+      "content": {
+        "en": "# Review Your VSME Report\n\nPlease review all the information you've entered. You can go back to any section to make changes.\n\nOnce you're satisfied with your inputs, click the **Export Excel** button to generate your completed VSME report.",
+        "de": "# Überprüfen Sie Ihren VSME-Bericht\n\nBitte überprüfen Sie alle eingegebenen Informationen. Sie können zu jedem Abschnitt zurückkehren, um Änderungen vorzunehmen.\n\nSobald Sie mit Ihren Eingaben zufrieden sind, klicken Sie auf die Schaltfläche **Excel exportieren**, um Ihren vollständigen VSME-Bericht zu erstellen."
+      },
+      "features": {
+        "showSummary": true,
+        "allowEdit": true,
+        "showValidation": true,
+        "exportButton": true
+      }
+    }
+  ],
+  "navigationRules": {
+    "allowSkip": false,
+    "allowBack": true,
+    "saveProgress": true,
+    "validationOnNext": true
+  },
+  "uiConfiguration": {
+    "progressIndicator": "stepper",
+    "showModuleCount": true,
+    "compactMode": false,
+    "theme": {
+      "primaryColor": "#10b981",
+      "secondaryColor": "#3b82f6"
+    }
+  }
+}
+

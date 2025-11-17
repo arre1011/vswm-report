@@ -1,0 +1,368 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VSME Report Data Model Schema",
+  "description": "Complete data model schema for EFRAG VSME sustainability reporting following official terminology",
+  "version": "1.0.0",
+  "definitions": {
+    "dataType": {
+      "type": "string",
+      "enum": ["text", "number", "date", "boolean", "select", "table", "textarea", "url", "email"]
+    },
+    "moduleType": {
+      "type": "string",
+      "enum": ["basic", "comprehensive"]
+    },
+    "stepperType": {
+      "type": "string",
+      "enum": ["informational", "core", "validation"]
+    },
+    "datapoint": {
+      "type": "object",
+      "description": "Individual data field (EFRAG terminology: Datapoint)",
+      "required": ["datapointId", "label", "dataType"],
+      "properties": {
+        "datapointId": {
+          "type": "string",
+          "description": "Unique identifier for the datapoint (camelCase)"
+        },
+        "label": {
+          "type": "object",
+          "description": "Multi-language labels for the datapoint",
+          "required": ["en"],
+          "properties": {
+            "en": {
+              "type": "string",
+              "description": "English label"
+            },
+            "de": {
+              "type": "string",
+              "description": "German label (Deutsch)"
+            }
+          }
+        },
+        "description": {
+          "type": "object",
+          "description": "Multi-language descriptions/help text",
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "dataType": {
+          "$ref": "#/definitions/dataType"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this field is mandatory"
+        },
+        "conditional": {
+          "type": "object",
+          "description": "Conditional display logic",
+          "properties": {
+            "dependsOn": {
+              "type": "string",
+              "description": "Datapoint ID this field depends on"
+            },
+            "condition": {
+              "type": "string",
+              "description": "Condition to evaluate (e.g., 'equals', 'notEmpty')"
+            },
+            "value": {
+              "description": "Value to compare against"
+            }
+          }
+        },
+        "excelNamedRange": {
+          "type": "string",
+          "description": "Excel Named Range for backend mapping"
+        },
+        "excelReference": {
+          "type": "string",
+          "description": "Exact Excel cell reference (e.g., 'General Information'!$D$3)"
+        },
+        "paragraphReference": {
+          "type": "string",
+          "description": "Reference to VSME standard paragraph (e.g., '24(a)')"
+        },
+        "guidanceReference": {
+          "type": "string",
+          "description": "Reference to VSME guidance document"
+        },
+        "options": {
+          "type": "array",
+          "description": "Options for select/dropdown fields",
+          "items": {
+            "type": "object",
+            "properties": {
+              "value": {"type": "string"},
+              "label": {
+                "type": "object",
+                "properties": {
+                  "en": {"type": "string"},
+                  "de": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "validation": {
+          "type": "object",
+          "description": "Validation rules (implementation detail, not in spec per user request)",
+          "properties": {
+            "min": {"type": "number"},
+            "max": {"type": "number"},
+            "pattern": {"type": "string"},
+            "minLength": {"type": "integer"},
+            "maxLength": {"type": "integer"}
+          }
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement (e.g., 'MWh', 'tCO2e', '%')"
+        },
+        "defaultValue": {
+          "description": "Default value for the field"
+        }
+      }
+    },
+    "tableDatapoint": {
+      "allOf": [
+        {"$ref": "#/definitions/datapoint"},
+        {
+          "type": "object",
+          "properties": {
+            "dataType": {
+              "const": "table"
+            },
+            "columns": {
+              "type": "array",
+              "description": "Column definitions for table datapoints",
+              "items": {
+                "$ref": "#/definitions/datapoint"
+              }
+            },
+            "minRows": {
+              "type": "integer",
+              "description": "Minimum number of rows"
+            },
+            "maxRows": {
+              "type": "integer",
+              "description": "Maximum number of rows"
+            },
+            "excelStartRow": {
+              "type": "integer",
+              "description": "Starting row in Excel for dynamic data"
+            }
+          }
+        }
+      ]
+    },
+    "disclosure": {
+      "type": "object",
+      "description": "Disclosure requirement within a module (EFRAG terminology: Disclosure)",
+      "required": ["disclosureId", "disclosureName", "datapoints"],
+      "properties": {
+        "disclosureId": {
+          "type": "string",
+          "description": "Unique identifier for the disclosure"
+        },
+        "disclosureName": {
+          "type": "object",
+          "description": "Multi-language names",
+          "required": ["en"],
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "description": {
+          "type": "object",
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether this disclosure is mandatory"
+        },
+        "paragraphReference": {
+          "type": "string"
+        },
+        "datapoints": {
+          "type": "array",
+          "description": "Individual data fields within this disclosure",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/definitions/datapoint"},
+              {"$ref": "#/definitions/tableDatapoint"}
+            ]
+          }
+        }
+      }
+    },
+    "module": {
+      "type": "object",
+      "description": "VSME Module (EFRAG terminology: Module)",
+      "required": ["moduleId", "moduleCode", "moduleName", "moduleType", "disclosures"],
+      "properties": {
+        "moduleId": {
+          "type": "string",
+          "description": "Unique identifier for the module"
+        },
+        "moduleCode": {
+          "type": "string",
+          "description": "Official VSME module code (e.g., 'B1', 'B3', 'C1')",
+          "pattern": "^[BC]\\d+$"
+        },
+        "moduleName": {
+          "type": "object",
+          "description": "Multi-language module names",
+          "required": ["en"],
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "description": {
+          "type": "object",
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "moduleType": {
+          "$ref": "#/definitions/moduleType"
+        },
+        "sheet": {
+          "type": "string",
+          "description": "Excel sheet name where this module's data resides"
+        },
+        "disclosures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/disclosure"
+          }
+        }
+      }
+    },
+    "stepper": {
+      "type": "object",
+      "description": "Wizard stepper configuration for UI",
+      "required": ["stepperId", "order", "stepperType", "title"],
+      "properties": {
+        "stepperId": {
+          "type": "string",
+          "description": "Unique identifier for the stepper"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Display order in the wizard"
+        },
+        "stepperType": {
+          "$ref": "#/definitions/stepperType"
+        },
+        "title": {
+          "type": "object",
+          "required": ["en"],
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "description": {
+          "type": "object",
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        },
+        "icon": {
+          "type": "string",
+          "description": "Icon identifier for UI"
+        },
+        "modules": {
+          "type": "array",
+          "description": "Module codes included in this stepper (for core steppers)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "content": {
+          "type": "object",
+          "description": "Static content (for informational steppers)",
+          "properties": {
+            "en": {"type": "string"},
+            "de": {"type": "string"}
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "required": ["metadata", "coreReport", "steppers"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Report metadata and configuration",
+      "required": ["version", "standard"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Data model version"
+        },
+        "standard": {
+          "type": "string",
+          "description": "VSME standard version",
+          "default": "VSME 1.1.0"
+        },
+        "sourceTemplate": {
+          "type": "string",
+          "description": "Source Excel template filename"
+        },
+        "totalNamedRanges": {
+          "type": "integer",
+          "description": "Total number of Excel Named Ranges"
+        },
+        "supportedLanguages": {
+          "type": "array",
+          "items": {"type": "string"},
+          "default": ["en", "de"]
+        },
+        "defaultLanguage": {
+          "type": "string",
+          "default": "de"
+        }
+      }
+    },
+    "coreReport": {
+      "type": "object",
+      "description": "Core reporting modules (Basic and Comprehensive)",
+      "required": ["basicModules", "comprehensiveModules"],
+      "properties": {
+        "basicModules": {
+          "type": "array",
+          "description": "Basic modules (B1-B11) - required for all reports",
+          "items": {
+            "$ref": "#/definitions/module"
+          }
+        },
+        "comprehensiveModules": {
+          "type": "array",
+          "description": "Comprehensive modules (C1-C9) - optional additional reporting",
+          "items": {
+            "$ref": "#/definitions/module"
+          }
+        }
+      }
+    },
+    "steppers": {
+      "type": "array",
+      "description": "Wizard stepper configuration for UI",
+      "items": {
+        "$ref": "#/definitions/stepper"
+      }
+    }
+  }
+}
+

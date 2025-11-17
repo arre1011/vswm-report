@@ -41,7 +41,7 @@ Eine **einfach zu bedienende Software**, die kleinen und mittleren Unternehmen (
 ### 🛇 Technische Ausrichtung (Kurzüberblick)
 
 * **Frontend:** React.
-* **Backend (optional):** Python FastAPI
+* **Backend :** Spring Boot  Kotlin 
 * **Integration:** Offizielle VSME-Taxonomie (XBRL-Dateien) zur automatisierten Validierung.
 ---
 

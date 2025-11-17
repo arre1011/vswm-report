@@ -1,0 +1,538 @@
+{
+  "metadata": {
+    "title": "VSME Repeating Data Structures",
+    "description": "Array-based patterns for dynamic/repeating data sections in VSME reporting",
+    "version": "1.0.0"
+  },
+  "repeatingDataPatterns": [
+    {
+      "patternId": "list-of-subsidiaries",
+      "patternName": {
+        "en": "List of Subsidiaries",
+        "de": "Liste der Tochtergesellschaften"
+      },
+      "module": "B1",
+      "disclosure": "b1-subsidiaries",
+      "excelSheet": "General Information",
+      "excelStartRow": 70,
+      "excelEndRow": 94,
+      "minRows": 0,
+      "maxRows": 20,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "subsidiaryName": {
+              "dataType": "text",
+              "excelNamedRange": "NameOfSubsidiary",
+              "excelColumn": "D"
+            },
+            "subsidiaryIdentifier": {
+              "dataType": "text",
+              "excelNamedRange": "IdentifierOfSubsidiary",
+              "excelColumn": "E"
+            },
+            "subsidiaryCountry": {
+              "dataType": "text",
+              "excelNamedRange": "SubsidiaryPrincipalPlaceOfBusiness",
+              "excelColumn": "F"
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration",
+        "note": "Write each array item to consecutive rows starting from excelStartRow"
+      }
+    },
+    {
+      "patternId": "list-of-sites",
+      "patternName": {
+        "en": "List of Sites",
+        "de": "Liste der Standorte"
+      },
+      "module": "B1",
+      "disclosure": "b1-sites",
+      "excelSheet": "General Information",
+      "excelStartRow": 109,
+      "excelEndRow": 133,
+      "minRows": 1,
+      "maxRows": 25,
+      "required": true,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "siteId": {
+              "dataType": "text",
+              "excelNamedRange": "SiteIdentifier",
+              "excelColumn": "C",
+              "label": {
+                "en": "Site ID",
+                "de": "Standort-ID"
+              }
+            },
+            "siteName": {
+              "dataType": "text",
+              "excelNamedRange": "NameOfSite",
+              "excelColumn": "D",
+              "label": {
+                "en": "Site Name",
+                "de": "Standortname"
+              }
+            },
+            "siteAddress": {
+              "dataType": "text",
+              "excelNamedRange": "AddressOfSite",
+              "excelColumn": "D",
+              "label": {
+                "en": "Address",
+                "de": "Adresse"
+              }
+            },
+            "siteCity": {
+              "dataType": "text",
+              "excelNamedRange": "CityOfSite",
+              "excelColumn": "F",
+              "label": {
+                "en": "City",
+                "de": "Stadt"
+              }
+            },
+            "siteCountry": {
+              "dataType": "text",
+              "excelNamedRange": "CountryOfSite",
+              "excelColumn": "G",
+              "label": {
+                "en": "Country",
+                "de": "Land"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration",
+        "note": "Each site occupies one row. Site IDs should be unique and can be referenced by other disclosures (e.g., biodiversity areas)."
+      }
+    },
+    {
+      "patternId": "sustainability-certifications",
+      "patternName": {
+        "en": "Sustainability Certifications",
+        "de": "Nachhaltigkeitszertifizierungen"
+      },
+      "module": "B1",
+      "disclosure": "b1-certifications",
+      "excelSheet": "General Information",
+      "excelStartRow": 99,
+      "minRows": 0,
+      "maxRows": 5,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "certificationType": {
+              "dataType": "text",
+              "label": {
+                "en": "Type of certification or label",
+                "de": "Art der Zertifizierung oder des Labels"
+              }
+            },
+            "certificationDescription": {
+              "dataType": "textarea",
+              "excelNamedRange": "DescriptionOfSustainabilityRelatedCertificationsOrLabels",
+              "label": {
+                "en": "Description",
+                "de": "Beschreibung"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    },
+    {
+      "patternId": "energy-consumption-breakdown",
+      "patternName": {
+        "en": "Breakdown of Energy Consumption",
+        "de": "Aufschlüsselung des Energieverbrauchs"
+      },
+      "module": "B3",
+      "disclosure": "b3-energy-breakdown",
+      "excelSheet": "Environmental Disclosures",
+      "excelStartRow": 12,
+      "excelEndRow": 14,
+      "minRows": 0,
+      "maxRows": 10,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "energyType": {
+              "dataType": "select",
+              "options": ["Electricity", "Fuel", "Renewable", "Non-renewable"],
+              "label": {
+                "en": "Energy Type",
+                "de": "Energieart"
+              }
+            },
+            "consumption": {
+              "dataType": "number",
+              "unit": "MWh",
+              "label": {
+                "en": "Consumption (MWh)",
+                "de": "Verbrauch (MWh)"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration",
+        "note": "Optional breakdown by energy type"
+      }
+    },
+    {
+      "patternId": "pollution-emissions",
+      "patternName": {
+        "en": "Pollution Emissions by Pollutant",
+        "de": "Schadstoffemissionen nach Schadstoff"
+      },
+      "module": "B4",
+      "disclosure": "b4-pollution",
+      "excelSheet": "Environmental Disclosures",
+      "excelStartRow": 80,
+      "excelEndRow": 119,
+      "minRows": 0,
+      "maxRows": 40,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "pollutantName": {
+              "dataType": "text",
+              "excelColumn": "D",
+              "label": {
+                "en": "Pollutant Name",
+                "de": "Schadstoffname"
+              }
+            },
+            "emissionToAir": {
+              "dataType": "number",
+              "excelNamedRange": "AmountOfEmissionToAir",
+              "unit": "kg",
+              "label": {
+                "en": "Emission to Air (kg)",
+                "de": "Emission in die Luft (kg)"
+              }
+            },
+            "emissionToWater": {
+              "dataType": "number",
+              "excelNamedRange": "AmountOfEmissionToWater",
+              "unit": "kg",
+              "label": {
+                "en": "Emission to Water (kg)",
+                "de": "Emission ins Wasser (kg)"
+              }
+            },
+            "emissionToSoil": {
+              "dataType": "number",
+              "excelNamedRange": "AmountOfEmissionToSoil",
+              "unit": "kg",
+              "label": {
+                "en": "Emission to Soil (kg)",
+                "de": "Emission in den Boden (kg)"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    },
+    {
+      "patternId": "biodiversity-sites",
+      "patternName": {
+        "en": "Sites in Biodiversity Sensitive Areas",
+        "de": "Standorte in biodiversitätssensiblen Gebieten"
+      },
+      "module": "B5",
+      "disclosure": "b5-biodiversity",
+      "excelSheet": "Environmental Disclosures",
+      "excelStartRow": 128,
+      "excelEndRow": 153,
+      "minRows": 0,
+      "maxRows": 26,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "relatedSiteId": {
+              "dataType": "text",
+              "label": {
+                "en": "Related Site ID (from B1)",
+                "de": "Zugehörige Standort-ID (aus B1)"
+              },
+              "note": "Reference to siteId from list-of-sites"
+            },
+            "areaSize": {
+              "dataType": "number",
+              "excelNamedRange": "AreaOfSiteInBiodiversitySensitiveArea",
+              "unit": "hectares or m²",
+              "label": {
+                "en": "Area (hectares or m²)",
+                "de": "Fläche (Hektar oder m²)"
+              }
+            },
+            "biodiversityType": {
+              "dataType": "text",
+              "label": {
+                "en": "Type of biodiversity area",
+                "de": "Art des Biodiversitätsgebiets"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration",
+        "note": "Links to Site IDs from B1. Validate that relatedSiteId exists in list-of-sites."
+      }
+    },
+    {
+      "patternId": "waste-generated",
+      "patternName": {
+        "en": "Waste Generated by Type",
+        "de": "Erzeugter Abfall nach Art"
+      },
+      "module": "B7",
+      "disclosure": "b7-waste",
+      "excelSheet": "Environmental Disclosures",
+      "excelStartRow": 189,
+      "excelEndRow": 210,
+      "minRows": 1,
+      "maxRows": 20,
+      "required": true,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "wasteType": {
+              "dataType": "select",
+              "options": ["Hazardous", "Non-hazardous", "Radioactive"],
+              "label": {
+                "en": "Type of Waste",
+                "de": "Abfallart"
+              }
+            },
+            "wasteAmount": {
+              "dataType": "number",
+              "unit": "tonnes",
+              "label": {
+                "en": "Amount (tonnes)",
+                "de": "Menge (Tonnen)"
+              }
+            },
+            "recycled": {
+              "dataType": "number",
+              "unit": "tonnes",
+              "label": {
+                "en": "Amount Recycled (tonnes)",
+                "de": "Recycelte Menge (Tonnen)"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    },
+    {
+      "patternId": "materials-flow",
+      "patternName": {
+        "en": "Annual Mass-Flow of Materials Used",
+        "de": "Jährlicher Materialstrom verwendeter Materialien"
+      },
+      "module": "B7",
+      "disclosure": "b7-materials",
+      "excelSheet": "Environmental Disclosures",
+      "excelStartRow": 216,
+      "excelEndRow": 230,
+      "minRows": 0,
+      "maxRows": 15,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "materialName": {
+              "dataType": "text",
+              "label": {
+                "en": "Name of the key material",
+                "de": "Name des Schlüsselmaterials"
+              }
+            },
+            "materialAmount": {
+              "dataType": "number",
+              "unit": "tonnes",
+              "label": {
+                "en": "Amount Used (tonnes)",
+                "de": "Verwendete Menge (Tonnen)"
+              }
+            },
+            "recycledContent": {
+              "dataType": "number",
+              "unit": "%",
+              "label": {
+                "en": "Recycled Content (%)",
+                "de": "Recyclinganteil (%)"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    },
+    {
+      "patternId": "country-of-employment",
+      "patternName": {
+        "en": "Employees by Country of Employment",
+        "de": "Mitarbeiter nach Beschäftigungsland"
+      },
+      "module": "B8",
+      "disclosure": "b8-country",
+      "excelSheet": "Social Disclosures",
+      "excelStartRow": 29,
+      "excelEndRow": 38,
+      "minRows": 0,
+      "maxRows": 10,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "country": {
+              "dataType": "text",
+              "excelNamedRange": "CountryOfEmploymentContractAxis",
+              "label": {
+                "en": "Country",
+                "de": "Land"
+              }
+            },
+            "numberOfEmployees": {
+              "dataType": "number",
+              "excelNamedRange": "NumberOfEmployeesForCountryOfEmploymentContract",
+              "label": {
+                "en": "Number of Employees",
+                "de": "Anzahl der Mitarbeiter"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    },
+    {
+      "patternId": "ghg-reduction-actions",
+      "patternName": {
+        "en": "Main Actions to Achieve GHG Targets",
+        "de": "Hauptmaßnahmen zur Erreichung der THG-Ziele"
+      },
+      "module": "C3",
+      "disclosure": "c3-main-actions",
+      "excelSheet": "Environmental Disclosures",
+      "minRows": 0,
+      "maxRows": 10,
+      "required": false,
+      "structure": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "actionDescription": {
+              "dataType": "textarea",
+              "label": {
+                "en": "Description of action",
+                "de": "Beschreibung der Maßnahme"
+              }
+            },
+            "expectedImpact": {
+              "dataType": "number",
+              "unit": "tCO2e",
+              "label": {
+                "en": "Expected GHG reduction impact (tCO2e)",
+                "de": "Erwartete THG-Reduktionswirkung (tCO2e)"
+              }
+            },
+            "timeline": {
+              "dataType": "text",
+              "label": {
+                "en": "Implementation timeline",
+                "de": "Umsetzungszeitplan"
+              }
+            }
+          }
+        }
+      },
+      "backendMapping": {
+        "strategy": "row-iteration"
+      }
+    }
+  ],
+  "backendImplementationNotes": {
+    "general": "All repeating data sections use the row-iteration strategy",
+    "rowIteration": {
+      "description": "Write each array item to consecutive Excel rows starting from excelStartRow",
+      "steps": [
+        "1. Load Excel template",
+        "2. Navigate to the specified sheet",
+        "3. For each item in the array:",
+        "   a. Calculate target row = excelStartRow + itemIndex",
+        "   b. For each property in the item:",
+        "      - If excelNamedRange is specified, use Named Range mapping",
+        "      - Otherwise, use excelColumn + target row",
+        "   c. Write the value to the calculated cell",
+        "4. Validate that itemCount does not exceed maxRows"
+      ]
+    },
+    "validation": {
+      "minRows": "Validate that at least minRows items are provided (if required)",
+      "maxRows": "Validate that no more than maxRows items are provided",
+      "required": "If required=true, at least minRows must be provided",
+      "crossReferences": "For fields like relatedSiteId, validate that the referenced ID exists"
+    }
+  },
+  "frontendImplementationNotes": {
+    "general": "All repeating sections should be rendered as dynamic forms with add/remove functionality",
+    "uiComponents": {
+      "table": "Use a table component with add row / delete row buttons",
+      "validation": "Validate min/max rows before submission",
+      "userExperience": "Auto-save array items as user adds/edits them",
+      "emptyState": "Show helpful empty state when array is empty with 'Add First Item' button"
+    }
+  }
+}
+

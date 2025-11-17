@@ -22,7 +22,7 @@ Enable SMEs to create professional, compliant VSME sustainability reports throug
 
 1. **🦯 Guided Wizard**: Step-by-step assistant with explanations, examples, and selection aids
 2. **🗂️ Smart Forms**: Intuitive input masks that automatically show only relevant fields (Basic or Comprehensive)
-3. **🇩🇪 Multilingual Support**: German primary, English secondary - removing language barriers
+3. **🇩🇪 Multilingual Support**: English primary, German secondary - removing language barriers
 4. **✅ Real-time Validation**: Traffic light logic and hints for missing or contradictory information
 5. **📦 Automated Excel Generation**: Correctly filled VSME Excel file (official format) ready for submission
 6. **💾 Auto-Save**: Local storage with optional cloud backup, data reusable for following years
@@ -336,7 +336,7 @@ Generated from `docs/data-model/vsme-data-model-spec.json`:
 - All tests pass
 - No console.errors in code
 - i18n keys exist for all labels
-- Storybook builds successfully
+
 
 ### Pre-Merge
 - Code review approved

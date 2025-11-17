@@ -28,7 +28,6 @@ This specification defines the **requirements** for backend Excel report generat
 
 **Non-Functional Requirements**:
 - **Performance**: Template loading ≤ 500ms at startup
-- **Memory**: Single template in memory (~8-10 MB)
 - **Thread-Safety**: Multiple concurrent requests must not corrupt template
 
 **Acceptance Criteria**:
@@ -68,7 +67,7 @@ This specification defines the **requirements** for backend Excel report generat
 **Acceptance Criteria**:
 - [ ] All 797 Named Ranges from data model are loaded at startup
 - [ ] Lookup is fast (O(1) via HashMap or similar)
-- [ ] Writing "Test GmbH" to datapoint "entityName" writes to correct cell. In the directory backend/src/test/kotlin is a semple Efrag Excel semple templed it is pre field we can us it for testing. You can take the Values from the Excel and then use it as test date. Give that in the Integrationtest and test the endpoint of the backend wich generate the excel. When ypu got the excel back you can compare the Efrag pre filed Excel Sample tamplade with that which you got from the endpoint and it the values should be the same.
+- [ ] Writing "Test GmbH" to datapoint "entityName" writes to correct cell
 - [ ] All dataTypes write correctly to their target cells
 - [ ] Invalid Named Range throws meaningful exception
 - [ ] Missing datapoint mapping throws meaningful exception
@@ -123,7 +122,7 @@ This specification defines the **requirements** for backend Excel report generat
 
 **Flow**:
 ```
-Request → Validate → Clone Template → Write Data → Response
+Request → Validate → Clone Template → Write Data → Convert to Bytes → Encode Base64 → Response
 ```
 
 **Input**: `ExcelExportRequest` (JSON)
@@ -147,17 +146,138 @@ Request → Validate → Clone Template → Write Data → Response
 
 ---
 
+## 2. Technical Constraints
+
+### C1: Technology Stack
+**Must Use**:
+- Apache POI library for Excel manipulation
+- Spring Boot dependency injection
+- Kotlin as implementation language
+
+**Reasoning**: Already defined in constitution, proven libraries
+
+### C2: Template Integrity
+**Must Not**:
+- Modify the original template file on disk
+- Change template structure (sheets, Named Ranges)
+- Alter template formulas or formatting
+
+**Must**:
+- Work with provided template as-is
+- Clone template for each request (thread-safety)
+- Preserve all Excel features (formulas, formatting, validation)
+
+### C3: Performance Targets
+- **Startup**: Template loading ≤ 500ms
+- **Basic Report**: Generation ≤ 2 seconds
+- **Comprehensive Report**: Generation ≤ 3 seconds
+- **Memory**: No leaks from repeated requests
+
+---
+
 ## 3. Architecture Guidance
 
 **Recommended Pattern**: Hexagonal Architecture
+
+**Suggested Components**:
+1. **Configuration Layer**: Load template at startup
+2. **Mapping Layer**: Load Named Range & repeating data configs
+3. **Writer Layer**: Write values to cells
+4. **Service Layer**: Orchestrate the complete flow
+5. **Controller Layer**: REST endpoint
+
+**Alternative Approaches** (not mandated):
+- Simple service without hexagonal architecture (if team prefers)
+- Direct cell addressing instead of Named Ranges (not recommended)
+- In-memory cache of generated reports (if needed for performance)
 
 **Key Design Principles**:
 - Single Responsibility: Each component has one job
 - Separation of Concerns: Config loading ≠ Writing ≠ API
 - Thread-Safe: No shared mutable state
 
+---
 
-## 4. Data Model References
+## 4. Integration Points
+
+### I1: Data Model
+**Source**: `docs/data-model/vsme-data-model-spec.json`
+
+**What to Extract**:
+- All modules (basicModules, comprehensiveModules)
+- All disclosures per module
+- All datapoints per disclosure
+- excelNamedRange per datapoint
+
+**When**: At application startup (load once)
+
+### I2: Repeating Data Patterns
+**Source**: `docs/data-model/vsme-repeating-data-patterns.json`
+
+**What to Extract**:
+- patternId, excelSheet, excelStartRow, maxRows
+- Column mappings
+
+**When**: At application startup (load once)
+
+### I3: Frontend API
+**Endpoint**: POST `/api/vsme/export`
+
+**Receives**: `ExcelExportRequest` (defined in `VsmeReportDto.kt`)
+
+**Returns**: `ExcelExportResponse` with Base64 encoded Excel
+
+**Error Handling**:
+- Validation errors → 400 Bad Request
+- Server errors → 500 Internal Server Error
+- Missing template → Application won't start
+
+### I4: Excel Template
+**File**: `VSME-Digital-Template-1.1.0.xlsx` (root directory)
+
+**Expected Structure**:
+- 13 sheets (Introduction, Table of Contents, General Information, etc.)
+- 797 Named Ranges
+- Pre-defined formulas and formatting
+
+---
+
+## 5. Non-Requirements
+
+**Explicitly NOT part of this specification**:
+- ❌ Multi-language Excel generation (only English template)
+- ❌ PDF export
+- ❌ Excel validation after generation (assumed template is valid)
+- ❌ Undo/Redo functionality
+- ❌ Partial report generation (must be complete)
+- ❌ Report versioning or history
+- ❌ Direct Excel editing in browser
+- ❌ Real-time collaborative editing
+
+---
+
+## 6. Testing Requirements
+
+### Unit Tests (Recommended)
+- Template loading succeeds
+- Named Range resolution works correctly
+- Data type conversion correct for all types
+- Error handling for missing mappings
+
+### Integration Tests (Required)
+- Complete report generation from sample request
+- Generated Excel opens in Microsoft Excel
+- Verify key datapoints written correctly
+- Performance test (generation time < 3s)
+
+### Acceptance Tests (Required)
+- End-to-end: Frontend → Backend → Excel download
+- Manual verification: Open Excel, check 10 random values
+- Edge cases: Empty arrays, optional fields, all dataTypes
+
+---
+
+## 7. Data Model References
 
 **Primary**: `docs/data-model/vsme-data-model-spec.json`  
 **Secondary**: `docs/data-model/vsme-repeating-data-patterns.json`  
@@ -165,3 +285,21 @@ Request → Validate → Clone Template → Write Data → Response
 **DTOs**: `backend/src/main/kotlin/org/example/backend/dto/VsmeReportDto.kt`
 
 ---
+
+## 8. Success Metrics
+
+**Definition of Done**:
+- [ ] Template loads at startup without errors
+- [ ] All 797 Named Ranges resolvable
+- [ ] B1 module (20+ datapoints) writes correctly
+- [ ] B3 module with numeric values writes correctly
+- [ ] List of Sites (array, 3 items) writes to 3 rows
+- [ ] Performance: Basic Report generates in < 2s
+- [ ] Integration test passes
+- [ ] Excel file validated manually
+
+---
+
+**Implementation Freedom**: Development team may choose implementation details not specified here, as long as all requirements and acceptance criteria are met.
+
+**Questions?** Clarify with team before implementation if requirements are unclear.

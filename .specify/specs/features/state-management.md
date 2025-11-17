@@ -22,10 +22,9 @@ This specification defines the **requirements** for frontend state management in
 
 **Functional Requirements**:
 - All form inputs persist to browser storage
-- Data survives page reload (F5, Ctrl+R)
+- Data survives page reload 
 - Data survives browser close/reopen
 - Data survives tab close/reopen
-- Clear/Reset function to start fresh
 
 **Storage Constraints**:
 - Maximum 5 MB total data size
@@ -91,7 +90,7 @@ This specification defines the **requirements** for frontend state management in
 ### R3: Wizard State Management
 **What**: Track user's progress through the wizard steps.
 
-**Why**: Allow jumping between steps, show completion status, prevent navigation to invalid steps.
+**Why**: Allow jumping between steps, show completion status.
 
 **Wizard State Data**:
 - **currentStep**: number (0-based index)
@@ -99,17 +98,9 @@ This specification defines the **requirements** for frontend state management in
 - **visitedSteps**: array of step numbers
 - **totalSteps**: number (constant, based on report mode)
 
-**Navigation Rules**:
-| Action | Validation Required? | Allowed When? |
-|--------|---------------------|---------------|
-| **Next** | ✅ Yes | Current step valid |
-| **Back** | ❌ No | Any previous step |
-| **Jump to Completed** | ❌ No | Step is in completedSteps |
-| **Jump to Incomplete** | ✅ Yes | Current step valid |
 
 **Step Completion Logic**:
 - Step becomes "completed" when:
-  - User clicks "Next" AND validation passes
   - All required fields in that step have values
   - All validations pass
 
@@ -117,14 +108,12 @@ This specification defines the **requirements** for frontend state management in
 - **Current**: Highlighted, editable
 - **Completed**: Checkmark, clickable
 - **Incomplete**: Number only, not clickable (unless current)
-- **Future**: Grayed out, not clickable
 
 **Acceptance Criteria**:
 - [ ] Start wizard → currentStep = 0
 - [ ] Complete step 0 → Click Next → currentStep = 1, completedSteps = [0]
 - [ ] Jump back to step 0 → No validation required
-- [ ] Try to jump to step 3 (incomplete) → Blocked (must complete 0,1,2 first)
-- [ ] Progress indicator shows 3/10 steps completed
+- [ ] Progress indicator shows completed steps when color of stepper turns green. When not stepper not started yet its gray. When it is started but not completer then it is red. 
 - [ ] Stepper UI reflects completed/incomplete status
 
 ---
@@ -164,55 +153,6 @@ validationErrors: {
 - [ ] Step indicator shows error count
 - [ ] Validation errors do NOT persist to LocalStorage
 
----
-
-### R5: Module Data Structure
-**What**: Store all VSME module data in a structured format matching the data model.
-
-**Why**: Align frontend state with data model spec, simplify backend integration.
-
-**Data Structure** (conceptual):
-```typescript
-{
-  reportMetadata: {
-    entityName: string
-    reportingPeriodStart: string
-    reportingPeriodEnd: string
-    // ...
-  },
-  basicModules: [
-    {
-      moduleCode: "B1",
-      disclosures: [
-        {
-          disclosureId: "B1-1",
-          datapoints: [
-            { datapointId: "entityName", value: "Test GmbH" },
-            { datapointId: "legalForm", value: "GmbH" }
-          ]
-        }
-      ]
-    }
-  ],
-  comprehensiveModules: [
-    // Same structure as basicModules
-  ]
-}
-```
-
-**Alignment with Data Model**:
-- Structure MUST match `docs/data-model/vsme-data-model-spec.json`
-- datapointIds MUST match data model exactly
-- Array datapoints MUST be arrays of objects
-- Optional fields CAN be null/undefined
-
-**Acceptance Criteria**:
-- [ ] State structure matches data model JSON schema
-- [ ] Can serialize state to JSON for API call (no transformation needed)
-- [ ] Can deserialize data model into state (no transformation needed)
-- [ ] Array datapoints are typed correctly (not string)
-
----
 
 ### R6: Report Mode Selection
 **What**: User selects Basic or Comprehensive mode, which determines which modules to show.
@@ -282,21 +222,7 @@ validationErrors: {
 - Reduces bugs
 - Better developer experience
 
-**Example Benefit**:
-```typescript
-// Without Immer (error-prone):
-set(state => ({
-  ...state,
-  basicModules: state.basicModules.map(m => 
-    m.moduleCode === 'B1' ? { ...m, datapoints: [...] } : m
-  )
-}))
 
-// With Immer (simple):
-set(draft => {
-  draft.basicModules[0].datapoints[0].value = "New Value"
-})
-```
 
 ### C4: Performance
 **Constraints**:
@@ -354,14 +280,10 @@ const state = useVsmeReportStore()
 const entityName = useVsmeReportStore(state => state.reportData.basicModules[0]...)
 ```
 
-### Alternative Approaches (Not Recommended but Allowed)
+### Alternative Approaches (Not Recommended)
 - Multiple smaller stores (one per module)
   - **Pro**: Better performance isolation
   - **Con**: More complex, harder to maintain
-- Context + useReducer instead of Zustand
-  - **Pro**: No external dependency
-  - **Con**: More boilerplate, worse performance
-
 ---
 
 ## 4. Integration Points
@@ -411,19 +333,6 @@ exportMutation.mutate(useVsmeReportStore.getState().reportData)
 
 ---
 
-## 5. Non-Requirements
-
-**Explicitly NOT part of this specification**:
-- ❌ Undo/Redo functionality (future enhancement)
-- ❌ Multi-device sync (LocalStorage is per-device)
-- ❌ Conflict resolution (only one user per report)
-- ❌ Version history or audit log
-- ❌ Real-time collaboration (multiple users editing same report)
-- ❌ Offline-first sync (no backend sync, only on export)
-- ❌ Import from previous report (future enhancement)
-- ❌ Auto-save to backend (only LocalStorage, backend only on export)
-
----
 
 ## 6. User Experience Requirements
 
@@ -462,7 +371,7 @@ exportMutation.mutate(useVsmeReportStore.getState().reportData)
 - Navigate steps → Wizard state correct
 - Validation blocks navigation
 
-### E2E Tests (Required)
+### E2E Tests Playwright (Required)
 - Complete wizard flow from start to export
 - Data persistence across page reload
 - Mode switching with data reset
@@ -475,24 +384,6 @@ exportMutation.mutate(useVsmeReportStore.getState().reportData)
 
 **Schema Definitions**: `frontend/src/types/vsme-api-types.ts`
 
-**Zod Schemas**: Generated by Task 4 (Code Generator)
+**Zod Schemas**: 
 
 ---
-
-## 9. Success Metrics
-
-**Definition of Done**:
-- [ ] Enter data in B1 → Reload → Data persists
-- [ ] Type in field → Blur → Saves + validates immediately
-- [ ] Type fast → Only saves after 900ms pause
-- [ ] Complete B1 → Click Next → Navigate to B2 (no errors)
-- [ ] Incomplete B1 → Click Next → Blocked (errors shown)
-- [ ] Switch mode → Confirmation → Progress reset
-- [ ] Export → State serialized correctly for API
-- [ ] Performance: No input lag, instant feedback
-
----
-
-**Implementation Freedom**: Choose store structure, hook patterns, and selector strategies that work best, as long as all requirements are met.
-
-**Questions?** Clarify with team before implementation if any requirement is ambiguous.

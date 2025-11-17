@@ -3,17 +3,7 @@
 ## Core Principles
 
 ### I. Domain-Driven Design (DDD)
-The application follows Domain-Driven Design principles with domains organized by Report. Each domain is self-contained with its own components, hooks, schemas, and types. Shared components live in a separate layer to avoid coupling.
-
-**Folder Structure:**
-```
-frontend/src/
-├── domains/              # Domain logic (nach VSME-Modulen)
-│   ├── report
-├── shared/               # Shared across domains
-│   ├── components/form/  # input-with-info, select-with-info, date-picker-with-info
-│   └── ...
-```
+The application follows Domain-Driven Design principles at the moment there is only one Domain this is report. The report is the whole VSME Datamodel. which you can find here docs/data-model/vsme-data-model-spec.json.
 
 ### II. EFRAG VSME Terminology (NON-NEGOTIABLE)
 All code, comments, and documentation must use official EFRAG VSME terminology:
@@ -22,7 +12,7 @@ All code, comments, and documentation must use official EFRAG VSME terminology:
 - **Datapoint**: Individual data field (e.g., `entityName`, `scope1Emissions`)
 - **Named Range**: Excel cell/range for backend mapping
 
-The master data model is located in `docs/data-model/vsme-data-model-spec.json` and serves as the single source of truth for all domains, disclosures, and datapoints. In the directory `docs/data-model/` you will find also other important  
+The master data model is located in `docs/data-model/vsme-data-model-spec.json` and serves as the single source of truth for all domains, disclosures, and datapoints. 
 
 ### III. Save Early, Save Quietly (NON-NEGOTIABLE)
 User data must be persisted immediately to prevent data loss:
@@ -52,9 +42,6 @@ All data structures must be strongly typed:
 ### V. Validation Strategy
 Two-level validation approach:
 1. **Field-level (onBlur)**: Immediate feedback, non-blocking
-2. **Module-level (on Next)**: Complete validation, blocks navigation if invalid
-
-Generated from data model with custom extensions for complex rules.
 
 ## Technology Stack
 
@@ -83,19 +70,18 @@ Generated from data model with custom extensions for complex rules.
 ### Infrastructure
 - **IaC**: Terraform (Azure)
 - **CI/CD**: GitHub Actions
-- **Containerization**: Docker
 
 ## Architecture Principles
 
 ### Frontend: Domain-Driven Hybrid Structure
 ```
 src/
-├── domains/              # Business domains (VSME modules)
-│   ├── {module-name}/
-│   │   ├── components/   # Module-specific components
-│   │   ├── hooks/        # Module-specific hooks
+├── domains/              # Business domain (VSME report)
+│   ├── {report-name}/
+│   │   ├── components/   # report components
+│   │   ├── hooks/        # report hooks
 │   │   ├── schemas/      # Zod validation schemas
-│   │   └── types.ts      # Module types
+│   │   └── types.ts      # report types
 ├── shared/               # Cross-cutting concerns
 │   ├── components/
 │   │   ├── form/         # Form components with info tooltips
@@ -166,8 +152,8 @@ npm run generate:types      # Generate TypeScript types
 ## Internationalization (i18n)
 
 ### Languages
-- **Primary**: German (de) - for German SMEs
-- **Secondary**: English (en) - for international use
+- **Primary**: English (en) - for international use
+- **Secondary**: German (de) - for German SMEs
 
 ### Structure
 ```
@@ -262,13 +248,9 @@ Generated from `docs/data-model/vsme-data-model-spec.json`:
 - **Error recovery**: Previous state restored on page reload
 - **Progress indication**: Stepper shows completion status
 
-### Security
-- **No sensitive data in LocalStorage**: Only report data (non-personal)
-- **HTTPS only** in production
-- **Input sanitization**: All user inputs validated and sanitized
-- **CORS configuration**: Restricted to known origins
 
-## Quality Gates
+
+
 
 ### Pre-Commit
 - TypeScript compilation successful
@@ -293,12 +275,6 @@ Generated from `docs/data-model/vsme-data-model-spec.json`:
 ### Constitution Authority
 This constitution supersedes all other development practices and guidelines. All code must comply with these principles. Violations require documented justification and approval.
 
-### Amendment Process
-1. Propose change with rationale
-2. Discuss with team
-3. Document impact and migration plan
-4. Update constitution
-5. Communicate to all developers
 
 ### Spec Updates
 When requirements change:

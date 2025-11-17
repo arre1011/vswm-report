@@ -440,70 +440,6 @@ const { t } = useTranslation('vsme')
 
 ---
 
-## 5. Non-Requirements
-
-**Explicitly NOT part of this specification**:
-- ❌ Runtime code generation (only build-time)
-- ❌ Validation of generated code (assume correct)
-- ❌ Hot-reload on data model change
-- ❌ Visual code generator UI
-- ❌ Migration scripts for schema changes
-- ❌ Backward compatibility for old schemas
-
----
-
-## 6. Testing Requirements
-
-### Manual Testing (Required)
-- Run `npm run generate:schemas`
-- Check output file exists and has no errors
-- Import schema in a test component
-- Verify validation works
-
-### Automated Testing (Optional)
-- Unit test for dataType mapping logic
-- Snapshot test for generated output
-
----
-
-## 7. Maintenance
-
-### When to Re-run Generation
-- After changes to data model JSON
-- After adding new modules/datapoints
-- After changing validation rules
-
-### Versioning
-- Add version number to generated file header
-- Match version to data model version
-
-### Generated File Header
-```typescript
-/**
- * AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
- * Generated from: docs/data-model/vsme-data-model-spec.json
- * Generated at: 2025-11-17T10:30:00Z
- * Data Model Version: 1.0.0
- * Generator: scripts/generate-zod-schemas.ts
- */
-```
-
----
-
-## 8. Success Metrics
-
-**Definition of Done**:
-- [ ] Script runs without errors
-- [ ] Output file generated with correct content
-- [ ] All dataTypes mapped to Zod schemas
-- [ ] All validation rules applied
-- [ ] i18n keys extracted for all labels
-- [ ] Can import and use in forms
-- [ ] Form validation works with generated schemas
-- [ ] i18n displays translated labels
-
----
-
 ## 9. Data Model Reference
 
 **Primary Source**: `docs/data-model/vsme-data-model-spec.json`
@@ -516,7 +452,3 @@ const { t } = useTranslation('vsme')
 - ~200 validation rules
 
 ---
-
-**Implementation Freedom**: Choose code generation approach (templates, AST manipulation, simple string building) that works best, as long as output meets requirements.
-
-**Questions?** Clarify with team before implementation if any requirement is unclear.

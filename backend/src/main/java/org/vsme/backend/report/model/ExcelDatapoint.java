@@ -1,7 +1,6 @@
 package org.vsme.backend.report.model;
 
-public record Datapoint (
+public record ExcelDatapoint(
         String datapointId,
-        String values
-){
-}
+        String excelNamedRange
+){}

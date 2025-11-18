@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.vsme.backend.report.model.Datapoint;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -12,8 +13,8 @@ public class ReportService {
 
     ExcelUpdateService excelUpdateService;
 
-    public ??? updateExcel(List<Datapoint> datapoints){
-
+    public byte[] updateExcel(List<Datapoint> dataPoints) throws IOException {
+        return excelUpdateService.updateExcel(dataPoints);
     }
 
 

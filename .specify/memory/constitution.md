@@ -50,43 +50,14 @@ The official VSME Excel template from EFRAG is comprehensive, technical, and pre
 | ❌ **Excel Skills Required** | No Excel knowledge needed, intuitive web forms |
 | ❌ **Time-Consuming** | Hours instead of weeks, guided process |
 
-**Market Gap:**
-Existing sustainability/ESG reporting tools are oversized and expensive - designed for comprehensive EU standards (CSRD/ESRS, GRI), not for SME-focused VSME reports. Our software focuses **exclusively on VSME** - lightweight, affordable, specialized.
-
----
-
-### Target Audience
-
-**Primary Users:**
-- 🏢 **Small and Medium Enterprises** (< 250 employees) required to create VSME reports
-- 🇩🇪 **German SMEs** as initial focus (product in German language)
-- 🌍 **International SMEs** (expandable via English version)
-
-**Secondary Users:**
-- 📊 **Consultants** supporting SMEs with sustainability reporting
-- 🏛️ **Business Associations** bundling VSME reports for member companies
-- 🏦 **Financial Institutions** requiring VSME reports for sustainable financing
-
-**Business Model:**
-- **Freemium**: Basic Report creation free, Excel export & premium features paid
-- **SaaS Subscription**: Monthly/annual plans for recurring use
-- **B2B Licensing**: For consultants, associations, and institutions
 
 ---
 
 ## Core Principles
 
 ### I. Domain-Driven Design (DDD)
-The application follows Domain-Driven Design principles at the moment there is only one Domain this is report. The report is the whole VSME Datamodel. which you can find here docs/data-model/vsme-data-model-spec.json.
+The application follows Domain-Driven Design principles at the moment there is only one Domain this is report.
 
-### II. EFRAG VSME Terminology (NON-NEGOTIABLE)
-All code, comments, and documentation must use official EFRAG VSME terminology:
-- **Module**: Top-level reporting category (e.g., B1, B3, C1)
-- **Disclosure**: Specific reporting requirement within a module
-- **Datapoint**: Individual data field (e.g., `entityName`, `scope1Emissions`)
-- **Named Range**: Excel cell/range for backend mapping
-
-The master data model is located in `docs/data-model/vsme-data-model-spec.json` and serves as the single source of truth for all domains, disclosures, and datapoints. 
 
 ### III. Save Early, Save Quietly (NON-NEGOTIABLE)
 User data must be persisted immediately to prevent data loss:
@@ -95,39 +66,6 @@ User data must be persisted immediately to prevent data loss:
 - **LocalStorage**: All data persisted via Zustand Persist Middleware
 - **Auto-hydration**: State automatically restored on page reload
 
-**Implementation:**
-```typescript
-// Zustand store with persist
-persist(
-  (set, get) => ({...}),
-  {
-    name: 'vsme-report-state',
-    storage: createJSONStorage(() => localStorage)
-  }
-)
-```
-
-### IV. Type Safety First
-All data structures must be strongly typed:
-- **Frontend**: TypeScript strict mode, Zod schemas for validation
-- **Backend**: Kotlin data classes, compile-time type checking
-- **API Contract**: Shared types between frontend and backend (`vsme-api-types.ts` ↔ `VsmeReportDto.kt`)
-
-### V. Validation Strategy
-Two-level validation approach:
-1. **Field-level (onBlur)**: Immediate feedback, non-blocking
-
-## Technology Stack
-
-### Frontend
-- **Framework**: React 18+ with TypeScript (strict mode)
-- **State Management**: Zustand with Persist middleware
-- **Forms**: React Hook Form
-- **Validation**: Zod (schemas generated from data model)
-- **API Client**: TanStack Query (v5)
-- **UI Library**: shadcn/ui + Tailwind CSS
-- **i18n**: i18next (German primary, English secondary)
-- **Build Tool**: Vite
 
 **Reusable Form Components:**
 - `input-with-info.tsx` - Text input with tooltip
@@ -135,71 +73,12 @@ Two-level validation approach:
 - `date-picker-with-info.tsx` - Date picker with tooltip
 
 ### Backend
-- **Framework**: Spring Boot 3.x with Kotlin
-- **Architecture**: Hexagonal (Ports & Adapters)
+- **Framework**: Spring Boot 3.x with Java
+- **Architecture**: 3 Layer Architecture. PresentationLayer -> Business logic -> Thired party exec layer other services or DB 
 - **Excel Library**: Apache POI
 - **Build Tool**: Gradle with Kotlin DSL
-- **JDK**: 17 or higher
+- **JDK**: 21 or higher
 
-### Infrastructure
-- **IaC**: Terraform (Azure)
-- **CI/CD**: GitHub Actions
-
-## Architecture Principles
-
-### Frontend: Domain-Driven Hybrid Structure
-```
-src/
-├── domains/              # Business domain (VSME report)
-│   ├── {report-name}/
-│   │   ├── components/   # report components
-│   │   ├── hooks/        # report hooks
-│   │   ├── schemas/      # Zod validation schemas
-│   │   └── types.ts      # report types
-├── shared/               # Cross-cutting concerns
-│   ├── components/
-│   │   ├── form/         # Form components with info tooltips
-│   │   ├── ui/           # shadcn/ui components
-│   │   └── layout/       # Layout components
-│   ├── hooks/            # Shared hooks
-│   ├── services/         # API services (TanStack Query)
-│   └── utils/            # Utilities
-├── stores/               # Global state (Zustand)
-├── i18n/                 # Translations (de, en)
-└── App.tsx
-```
-
-### Backend: Hexagonal Architecture
-```
-backend/src/main/kotlin/org/example/backend/
-├── domain/               # Core domain (no external dependencies)
-│   ├── model/            # Domain entities
-│   ├── ports/
-│   │   ├── inbound/      # Use cases (ExportReportUseCase)
-│   │   └── outbound/     # External interfaces (ExcelGenerationPort)
-│   └── service/          # Domain logic
-├── adapter/              # External adapters
-│   ├── inbound/
-│   │   └── rest/         # REST controllers
-│   └── outbound/
-│       ├── excel/        # Apache POI implementation
-│       └── template/     # Template loading
-├── application/          # Application orchestration
-└── dto/                  # Data Transfer Objects
-```
-
-**Key Ports:**
-1. **ExportReportUseCase** (inbound): Generate VSME Excel report
-2. **ValidateReportUseCase** (inbound): Validate report data
-3. **ExcelGenerationPort** (outbound): Excel file generation interface
-4. **TemplateLoaderPort** (outbound): Load VSME Excel template
-
-### Excel Template Handling
-- Template file: `VSME-Digital-Template-1.1.0.xlsx` (root directory)
-- **Load once at startup** (singleton bean)
-- **Keep in memory** for performance
-- **Clone template** for each export request
-- **Thread-safe operations** required
 
 **Named Range Mapping:** 
 All 797 Named Ranges from the Excel template are mapped to datapoints in `docs/data-model/vsme-data-model-spec.json`. Backend writes values using Named Range resolution.
@@ -263,41 +142,6 @@ The wizard consists of 6 steppers as defined in `vsme-stepper-config.json`:
 
 **Conditional Display**: Comprehensive modules (C1-C9) only shown if user selects "Basic & Comprehensive" mode.
 
-### Code Generation
-Schemas, types, and i18n keys are **generated** from the data model:
-```bash
-npm run generate:schemas    # Generate Zod schemas
-npm run generate:i18n       # Extract i18n keys
-npm run generate:types      # Generate TypeScript types
-```
-
-## Internationalization (i18n)
-
-### Languages
-- **Primary**: English (en) - for international use
-- **Secondary**: German (de) - for German SMEs
-
-### Structure
-```
-src/i18n/
-├── de/
-│   ├── common.json
-│   ├── modules/
-│   │   ├── b1.json     # Basis for Preparation
-│   │   ├── b3.json     # Energy & GHG
-│   │   └── ...
-│   └── validation.json
-├── en/
-│   └── (same structure)
-└── config.ts
-```
-
-### Translation Keys
-Generated from `docs/data-model/vsme-data-model-spec.json`:
-- Module labels (e.g., `modules.b1.title`)
-- Disclosure labels (e.g., `modules.b1.disclosures.xbrl_info.title`)
-- Datapoint labels (e.g., `modules.b1.datapoints.entity_name.label`)
-- Validation messages (e.g., `validation.required`, `validation.invalid_format`)
 
 ## Development Workflow
 
@@ -320,77 +164,7 @@ Generated from `docs/data-model/vsme-data-model-spec.json`:
 - **Storybook**: For component documentation and testing
 - Generated Excel files validated against VSME standard
 
-## API Contract
 
-### Endpoint
-**POST** `/api/vsme/export`
-
-### Request Format
-```typescript
-{
-  reportMetadata: {
-    reportDate: string (ISO 8601)
-    reportVersion: string
-    basisForPreparation: 'Basic Module Only' | 'Basic & Comprehensive'
-    language: 'en' | 'de'
-  },
-  coreReport: {
-    basicModules: ModuleDataRequest[]
-    comprehensiveModules?: ModuleDataRequest[]
-  }
-}
-```
-
-### Response Format
-```typescript
-{
-  success: boolean
-  message: string
-  timestamp: string
-  excelFileBase64?: string  // Base64 encoded Excel file
-  validationErrors?: ValidationError[]
-}
-```
-
-**Type Definitions:** 
-- Frontend: `frontend/src/types/vsme-api-types.ts`
-- Backend: `backend/src/main/kotlin/org/example/backend/dto/VsmeReportDto.kt`
-
-## Non-Functional Requirements
-
-### Performance
-- **Excel generation**: < 2 seconds for Basic Report
-- **Auto-save**: Debounced to prevent excessive writes
-- **Template caching**: Load once, reuse for all requests
-- **Frontend bundle**: < 500 KB gzipped
-
-### User Experience
-- **Silent saving**: No loading spinners for auto-save
-- **Optimistic updates**: UI updates immediately
-- **Error recovery**: Previous state restored on page reload
-- **Progress indication**: Stepper shows completion status
-
-
-
-
-
-### Pre-Commit
-- TypeScript compilation successful
-- ESLint passes (frontend)
-- Ktlint passes (backend)
-- Prettier formatting applied
-
-### Pre-Push
-- All tests pass
-- No console.errors in code
-- i18n keys exist for all labels
-
-
-### Pre-Merge
-- Code review approved
-- Integration tests pass
-- Generated Excel validated
-- Documentation updated
 
 ## References & Key Documents
 
@@ -402,49 +176,11 @@ Generated from `docs/data-model/vsme-data-model-spec.json`:
 ### Specifications
 All feature specifications follow requirements-based format (WHAT & WHY, not HOW):
 
-#### Backend Specifications
-- 📦 **[`.specify/specs/backend/excel-integration.md`](../specs/backend/excel-integration.md)**
-  - Template loading (singleton pattern)
-  - Named Range resolution (797 mappings)
-  - Repeating data handling (arrays/tables)
-  - Complete report generation flow
-
-#### Frontend Specifications
-- 🗂️ **[`.specify/specs/features/state-management.md`](../specs/features/state-management.md)**
-  - Report data persistence (LocalStorage)
-  - Auto-save behavior (onBlur + debounced onChange)
-  - Wizard state management
-  - Validation state integration
-
-#### Code Generation
-- ⚙️ **[`.specify/specs/scripts/code-generation.md`](../specs/scripts/code-generation.md)**
-  - Zod schema generation from data model
-  - i18n key extraction (en/de)
-  - TypeScript type generation
-
-### Data Model (Single Source of Truth)
-- 📋 **[`docs/data-model/vsme-data-model-spec.json`](../../docs/data-model/vsme-data-model-spec.json)**: Master specification (6705 lines)
-  - All Basic Modules (B1-B11) with 797 datapoints
-  - All Comprehensive Modules (C1-C9)
-  - Complete Named Range mappings
-  - 10 Repeating data patterns
-  - Type definitions
-
-- 🗺️ **[`docs/data-model/vsme-stepper-config.json`](../../docs/data-model/vsme-stepper-config.json)**: Wizard UI configuration
-  - 6 stepper definitions (Introduction, General, Environmental, Social, Governance, Review)
-  - Module-to-stepper mappings
-  - Conditional display rules (Basic vs. Comprehensive)
-  - i18n labels and help texts
-
 ### Excel Template
 - 📊 **[`VSME-Digital-Template-1.1.0.xlsx`](../../VSME-Digital-Template-1.1.0.xlsx)**: Official EFRAG template
   - 13 sheets
   - 797 Named Ranges
   - Used as template for report generation
-
-### Implementation Plans
-- 📝 **[`.specify/plans/`](../plans/)**: Phased implementation roadmaps
-- ✅ **[`.specify/tasks/`](../tasks/)**: Task tracking with dependencies and status
 
 ---
 

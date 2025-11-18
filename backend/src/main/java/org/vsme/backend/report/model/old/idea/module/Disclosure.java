@@ -1,4 +1,6 @@
-package org.vsme.backend.report.model;
+package org.vsme.backend.report.model.old.idea.module;
+
+import org.vsme.backend.report.model.Datapoint;
 
 import java.util.List;
 

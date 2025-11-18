@@ -1,6 +1,6 @@
-package org.vsme.backend.report.model.stepper;
+package org.vsme.backend.report.model.old.idea.module.stepper;
 
-import org.vsme.backend.report.model.Disclosure;
+import org.vsme.backend.report.model.old.idea.module.Disclosure;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
-package org.vsme.backend.report.model.stepper;
+package org.vsme.backend.report.model.old.idea.module.stepper;
 
-import org.vsme.backend.report.model.Disclosure;
+import org.vsme.backend.report.model.old.idea.module.ModuleB1;
 
-import java.util.List;
-
-public record GeneralInformation (List<Disclosure> disclosures){}
+public record GeneralInformation (
+        ModuleB1 moduleB1
+){}

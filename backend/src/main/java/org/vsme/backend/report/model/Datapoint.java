@@ -1,4 +1,7 @@
 package org.vsme.backend.report.model;
 
-public class datapoint {
+public record Datapoint (
+        String datapointId,
+        String excelNamedRange
+){
 }

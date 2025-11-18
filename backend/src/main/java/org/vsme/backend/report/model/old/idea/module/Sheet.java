@@ -1,4 +1,4 @@
-package org.vsme.backend.report.model;
+package org.vsme.backend.report.model.old.idea.module;
 
 import java.util.List;
 

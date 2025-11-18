@@ -11,7 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReportService {
 
-    ExcelUpdateService excelUpdateService;
+    private final ExcelUpdateService excelUpdateService;
 
     public byte[] updateExcel(List<Datapoint> dataPoints) throws IOException {
         return excelUpdateService.updateExcel(dataPoints);

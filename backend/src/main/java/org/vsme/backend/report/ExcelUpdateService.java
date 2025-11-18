@@ -2,6 +2,7 @@ package org.vsme.backend.report;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ClassPathResource;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExcelUpdateService {
@@ -28,14 +30,29 @@ public class ExcelUpdateService {
     private byte[] templateBytes;
 
     @PostConstruct
-    public void loadTemplate() throws IOException {
-        ClassPathResource resource = new ClassPathResource(EXCEL_TEMPLATE);
-        try (InputStream inputStream = resource.getInputStream()) {
-            templateBytes = inputStream.readAllBytes();
+    public void loadTemplate() {
+        try {
+            log.info("🔄 Loading VSME Excel template: {}", EXCEL_TEMPLATE);
+            ClassPathResource resource = new ClassPathResource(EXCEL_TEMPLATE);
+            if (!resource.exists()) {
+                log.error("❌ Excel template not found: {}", EXCEL_TEMPLATE);
+                throw new IllegalStateException("Excel template not found: " + EXCEL_TEMPLATE);
+            }
+            try (InputStream inputStream = resource.getInputStream()) {
+                templateBytes = inputStream.readAllBytes();
+                log.info("✅ Excel template loaded successfully ({} bytes)", templateBytes.length);
+            }
+        } catch (IOException e) {
+            log.error("❌ Failed to load Excel template: {}", e.getMessage(), e);
+            throw new IllegalStateException("Failed to load Excel template", e);
         }
     }
 
     public byte[] updateExcel(List<Datapoint> dataPoints) throws IOException {
+        if (templateBytes == null) {
+            throw new IllegalStateException("Excel template not loaded. Application startup failed.");
+        }
+        
         List<ExcelDatapoint> excelDataPoints = excelDatapointsRepo.getExcelDatapoints(null);
         List<NamedRangeUpdate> updates = createNamedRangeUpdates(dataPoints, excelDataPoints);
         

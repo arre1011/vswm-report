@@ -17,6 +17,14 @@ const currencyOptions = [
   { value: "JPY", label: "JPY – Japanischer Yen" },
 ]
 
+const contextIdentifierScheme = [
+    { value: "LEI", label: "LEI" },
+    { value: "DUNS", label: "DUNS" },
+    { value: "EU ID", label: "EU ID" },
+    { value: "PermID", label: "PermID" },
+]
+
+
 const basisModuleOptions: Array<{ value: BasisModuleOption; label: string }> = [
   { value: "Basic", label: "Basic Module Only" },
   { value: "Basic & Comprehensive", label: "Basic & Comprehensive" },
@@ -47,7 +55,7 @@ export function GeneralInformationForm() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Information on the report necessary for  XBRL [Always to be reported]</CardTitle>
+          <CardTitle>Information on the report necessary for  XBRL</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -57,58 +65,77 @@ export function GeneralInformationForm() {
               value={general.entityName}
               onChange={handleInputChange("entityName")}
               required
-              infoTitle=""
+              placeholder="e.g. Company XYZ"
+              infoTitle="N/A"
               infoDescription="N/A at the moment"
             />
 
 
-              <SelectWithInfo
-                  id="entityIdentifierScheme"
-                  label="Identifier of the reporting entity"
-                  value={general.currency}
-                  onValueChange={(value) =>
-                      updateGeneralInformation({ currency: value })
-                  }
-                  options={currencyOptions}
-                  placeholder="Währung wählen"
-                  infoTitle="Währung der monetären Werte"
-                  infoDescription="Wählen Sie die Währung, in der finanzielle Kennzahlen im Bericht angegeben werden. Für den Basic Report sind z. B. EUR, USD, GBP oder JPY zulässig."
-              />
+
 
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SelectWithInfo
+                  id="entityIdentifierScheme"
+                  label="Identifier of the reporting entity"
+                  value={general.entityIdentifierScheme}
+                  onValueChange={(value) =>
+                      updateGeneralInformation({ entityIdentifierScheme: value })
+                  }
+                  options={contextIdentifierScheme}
+                  infoTitle="Identifier of the reporting entity"
+                  infoDescription="The entity identifier is a unique ID, that will enable identifying the company that has reported the information. The VSME Standard does not require any specific identifier. An entity identifier is required for the digital reporting."
+              />
               <InputWithInfo
                   id="entityIdentifier"
-                  label="Identifikator der Einheit"
+                  label="Specify identifier of the reporting entity"
                   value={general.entityIdentifier}
                   onChange={handleInputChange("entityIdentifier")}
+                  placeholder="e.g. TestCode1234"
                   required
                   infoTitle="Identifikator der berichtenden Einheit"
-                  infoDescription="Beispiel: LEI, Handelsregisternummer oder eine andere eindeutige Kennung. Dieser Wert wird für XBRL-Metadaten benötigt."
+                  infoDescription="The entity identifier is a unique ID, that will enable identifying the company that has reported the information. The VSME Standard does not require any specific identifier. An entity identifier is required for the digital reporting."
               />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DatePickerWithInfo
-                id="reportingPeriodStart"
-                label="Berichtsbeginn"
-                date={general.reportingPeriodStart}
-                onDateChange={(date) => updateGeneralInformation({ reportingPeriodStart: date })}
-                placeholder="Startdatum wählen"
-                infoTitle="Startdatum des Berichtszeitraums"
-                infoDescription="Der Bericht deckt einen bestimmten Zeitraum ab. Wählen Sie das Anfangsdatum, das in der General Information Tabelle (Zeile 9) eingetragen wird."
-              />
-              <DatePickerWithInfo
-                id="reportingPeriodEnd"
-                label="Berichtsende"
-                date={general.reportingPeriodEnd}
-                onDateChange={(date) => updateGeneralInformation({ reportingPeriodEnd: date })}
-                placeholder="Enddatum wählen"
-                infoTitle="Enddatum des Berichtszeitraums"
-                infoDescription="Wählen Sie das Enddatum des Berichtszeitraums (siehe Zeile 13 des Excel-Templates). Achten Sie auf Konsistenz mit dem Startdatum."
-              />
-            </div>
           </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <SelectWithInfo
+                    id="currency"
+                    label="Berichtswährung"
+                    value={general.currency}
+                    onValueChange={(value) =>
+                        updateGeneralInformation({ currency: value })
+                    }
+                    options={currencyOptions}
+                    placeholder="Währung wählen"
+                    infoTitle="Währung der monetären Werte"
+                    infoDescription="Wählen Sie die Währung, in der finanzielle Kennzahlen im Bericht angegeben werden. Für den Basic Report sind z. B. EUR, USD, GBP oder JPY zulässig."
+                />
+
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <DatePickerWithInfo
+                        id="reportingPeriodStart"
+                        label="Reporting start date"
+                        date={general.reportingPeriodStart}
+                        onDateChange={(date) => updateGeneralInformation({ reportingPeriodStart: date })}
+                        placeholder="Choose a start Date"
+                        infoTitle="Reporting period start date"
+                        infoDescription="If VALUE not Valid, please ensure that the reporting period end date is greater than the reporting period start date."
+                    />
+                    <DatePickerWithInfo
+                        id="reportingPeriodEnd"
+                        label="Reporting end date"
+                        date={general.reportingPeriodEnd}
+                        onDateChange={(date) => updateGeneralInformation({ reportingPeriodEnd: date })}
+                        placeholder="Choose a end Date"
+                        infoTitle="Reporting period end date"
+                        infoDescription="If VALUE not Valid, please ensure that the reporting period end date is greater than the reporting period start date."
+                    />
+                </div>
+            </div>
         </CardContent>
       </Card>
 

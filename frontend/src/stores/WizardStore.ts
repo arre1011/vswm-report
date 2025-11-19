@@ -11,7 +11,7 @@ export type EmployeeCountingMethod =
 export interface GeneralInformationData {
   entityName: string
   entityIdentifier: string
-    entityIdentifierScheme: string
+  entityIdentifierScheme: string
   currency: string
   reportingPeriodStart?: Date
   reportingPeriodEnd?: Date
@@ -61,6 +61,11 @@ export interface WizardData {
   governanceDisclosures: GovernanceDisclosuresData
 }
 
+interface ExcelDatapointPayload {
+  datapointId: string
+  values: string
+}
+
 interface WizardState {
   data: WizardData
   currentStep: number
@@ -84,7 +89,7 @@ const createInitialWizardData = (): WizardData => ({
   generalInformation: {
     entityName: "",
     entityIdentifier: "",
-      entityIdentifierScheme: "",
+    entityIdentifierScheme: "",
     currency: "",
     reportingPeriodStart: undefined,
     reportingPeriodEnd: undefined,
@@ -124,6 +129,103 @@ const createInitialWizardData = (): WizardData => ({
     maleBoardMembers: "",
   },
 })
+
+type PrimitiveInput = string | number | boolean | Date | null | undefined
+
+const buildDatapointsFromWizard = (wizardData: WizardData): ExcelDatapointPayload[] => {
+  const datapoints: ExcelDatapointPayload[] = []
+
+  const addValue = (datapointId: string, value?: PrimitiveInput) => {
+    if (value === undefined || value === null) {
+      return
+    }
+    if (typeof value === "string" && value.trim() === "") {
+      return
+    }
+    if (typeof value === "number" && Number.isNaN(value)) {
+      return
+    }
+
+    const normalizedValue =
+      value instanceof Date
+        ? value.toISOString().split("T")[0]
+        : typeof value === "boolean"
+        ? value
+          ? "true"
+          : "false"
+        : value
+
+    datapoints.push({
+      datapointId,
+      values: String(normalizedValue),
+    })
+  }
+
+  const addSectionValues = (
+    section: Record<string, PrimitiveInput>,
+    options: { skip?: string[] } = {},
+  ) => {
+    Object.entries(section).forEach(([key, value]) => {
+      if (options.skip?.includes(key)) {
+        return
+      }
+      addValue(key, value)
+    })
+  }
+
+  const addDateParts = (baseId: string, date?: Date) => {
+    if (!date) {
+      return
+    }
+    addValue(baseId, date)
+    addValue(`${baseId}Year`, date.getFullYear())
+    addValue(`${baseId}Month`, date.getMonth() + 1)
+    addValue(`${baseId}Day`, date.getDate())
+  }
+
+  const { generalInformation, environmentalDisclosures, socialDisclosures, governanceDisclosures } =
+    wizardData
+
+  addSectionValues(generalInformation as unknown as Record<string, PrimitiveInput>, {
+    skip: ["reportingPeriodStart", "reportingPeriodEnd"],
+  })
+  addSectionValues(environmentalDisclosures as unknown as Record<string, PrimitiveInput>)
+  addSectionValues(socialDisclosures as unknown as Record<string, PrimitiveInput>)
+  addSectionValues(governanceDisclosures as unknown as Record<string, PrimitiveInput>)
+
+  addDateParts("reportingPeriodStart", generalInformation.reportingPeriodStart)
+  addDateParts("reportingPeriodEnd", generalInformation.reportingPeriodEnd)
+
+  return datapoints
+}
+
+const extractFilename = (contentDisposition: string | null): string | null => {
+  if (!contentDisposition) {
+    return null
+  }
+
+  const utf8FilenameMatch = contentDisposition.match(/filename\\*=UTF-8''(?<filename>[^;]+)/i)
+  if (utf8FilenameMatch?.groups?.filename) {
+    return decodeURIComponent(utf8FilenameMatch.groups.filename)
+  }
+
+  const asciiFilenameMatch = contentDisposition.match(/filename=\"?(?<filename>[^\";]+)\"?/i)
+  return asciiFilenameMatch?.groups?.filename ?? null
+}
+
+const triggerExcelDownload = (blob: Blob, fallbackFilename?: string) => {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download =
+    fallbackFilename && fallbackFilename.trim().length > 0
+      ? fallbackFilename
+      : `VSME_Report_${new Date().toISOString().split("T")[0]}.xlsx`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
 
 type WizardStoreSet = StoreApi<WizardState>["setState"]
 type WizardStoreGet = StoreApi<WizardState>["getState"]
@@ -184,53 +286,46 @@ const createWizardStore = (set: WizardStoreSet, get: WizardStoreGet): WizardStat
     set({ isSubmitting: true, submitError: null })
     const { data } = get()
 
+    const datapoints = buildDatapointsFromWizard(data)
+    if (datapoints.length === 0) {
+      const errorMessage = "Keine Eingaben gefunden. Bitte füllen Sie mindestens ein Feld aus."
+      set({ submitError: errorMessage, isSubmitting: false })
+      throw new Error(errorMessage)
+    }
+
     try {
-      const response = await fetch("http://localhost:8080/api/submit", {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080"
+      const response = await fetch(`${apiBaseUrl}/excel-update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
-        body: JSON.stringify({
-          generalInformation: {
-            ...data.generalInformation,
-            reportingPeriodStart: data.generalInformation.reportingPeriodStart
-              ? data.generalInformation.reportingPeriodStart.toISOString().split("T")[0]
-              : null,
-            reportingPeriodEnd: data.generalInformation.reportingPeriodEnd
-              ? data.generalInformation.reportingPeriodEnd.toISOString().split("T")[0]
-              : null,
-          },
-          environmentalDisclosures: {
-            ...data.environmentalDisclosures,
-          },
-          socialDisclosures: {
-            ...data.socialDisclosures,
-          },
-          governanceDisclosures: {
-            ...data.governanceDisclosures,
-          },
-        }),
+        body: JSON.stringify(datapoints),
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null)
-        throw new Error(
-          errorData?.message || `Server-Fehler: ${response.status} ${response.statusText}`,
-        )
+        let errorMessage = `Server-Fehler: ${response.status} ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          if (errorData?.message) {
+            errorMessage = errorData.message
+          }
+        } catch {
+          // ignore JSON parse errors
+        }
+        throw new Error(errorMessage)
       }
 
-      const result = await response.json()
-      console.log("Daten erfolgreich gesendet:", result)
-
-      if (!result.success) {
-        throw new Error(result.message || "Fehler beim Verarbeiten der Daten")
-      }
+      const blob = await response.blob()
+      const filename = extractFilename(response.headers.get("Content-Disposition"))
+      triggerExcelDownload(blob, filename ?? undefined)
     } catch (error) {
       let errorMessage = "Backend ist nicht erreichbar. Bitte versuchen Sie es später erneut."
 
       if (error instanceof TypeError && error.message.includes("fetch")) {
         errorMessage =
-          "Verbindungsfehler: Das Backend ist nicht erreichbar. Stellen Sie sicher, dass der Server auf Port 8080 läuft."
+          "Verbindungsfehler: Das Backend ist nicht erreichbar. Stellen Sie sicher, dass der Server läuft."
       } else if (error instanceof Error) {
         errorMessage = error.message
       }
@@ -244,4 +339,3 @@ const createWizardStore = (set: WizardStoreSet, get: WizardStoreGet): WizardStat
 })
 
 export const useWizard = create<WizardState>(createWizardStore)
-

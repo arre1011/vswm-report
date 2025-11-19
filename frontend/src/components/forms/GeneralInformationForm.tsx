@@ -47,44 +47,46 @@ export function GeneralInformationForm() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Berichtsdetails</CardTitle>
-          <CardDescription>Stammdaten des Unternehmens und Berichtszeitraum.</CardDescription>
+          <CardTitle>Information on the report necessary for  XBRL [Always to be reported]</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputWithInfo
               id="entityName"
-              label="Name der berichtenden Einheit"
+              label="Name of the reporting entity"
               value={general.entityName}
               onChange={handleInputChange("entityName")}
               required
-              infoTitle="Name der berichtenden Einheit"
-              infoDescription="Geben Sie den offiziellen Namen der berichtenden Einheit an, wie er im Handelsregister oder offiziellen Dokumenten geführt wird."
+              infoTitle=""
+              infoDescription="N/A at the moment"
             />
-            <InputWithInfo
-              id="entityIdentifier"
-              label="Identifikator der Einheit"
-              value={general.entityIdentifier}
-              onChange={handleInputChange("entityIdentifier")}
-              required
-              infoTitle="Identifikator der berichtenden Einheit"
-              infoDescription="Beispiel: LEI, Handelsregisternummer oder eine andere eindeutige Kennung. Dieser Wert wird für XBRL-Metadaten benötigt."
-            />
+
+
+              <SelectWithInfo
+                  id="entityIdentifierScheme"
+                  label="Identifier of the reporting entity"
+                  value={general.currency}
+                  onValueChange={(value) =>
+                      updateGeneralInformation({ currency: value })
+                  }
+                  options={currencyOptions}
+                  placeholder="Währung wählen"
+                  infoTitle="Währung der monetären Werte"
+                  infoDescription="Wählen Sie die Währung, in der finanzielle Kennzahlen im Bericht angegeben werden. Für den Basic Report sind z. B. EUR, USD, GBP oder JPY zulässig."
+              />
+
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <SelectWithInfo
-              id="currency"
-              label="Berichtswährung"
-              value={general.currency}
-              onValueChange={(value) =>
-                updateGeneralInformation({ currency: value })
-              }
-              options={currencyOptions}
-              placeholder="Währung wählen"
-              infoTitle="Währung der monetären Werte"
-              infoDescription="Wählen Sie die Währung, in der finanzielle Kennzahlen im Bericht angegeben werden. Für den Basic Report sind z. B. EUR, USD, GBP oder JPY zulässig."
-            />
+              <InputWithInfo
+                  id="entityIdentifier"
+                  label="Identifikator der Einheit"
+                  value={general.entityIdentifier}
+                  onChange={handleInputChange("entityIdentifier")}
+                  required
+                  infoTitle="Identifikator der berichtenden Einheit"
+                  infoDescription="Beispiel: LEI, Handelsregisternummer oder eine andere eindeutige Kennung. Dieser Wert wird für XBRL-Metadaten benötigt."
+              />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DatePickerWithInfo

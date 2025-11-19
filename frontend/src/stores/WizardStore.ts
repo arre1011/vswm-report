@@ -11,6 +11,7 @@ export type EmployeeCountingMethod =
 export interface GeneralInformationData {
   entityName: string
   entityIdentifier: string
+    entityIdentifierScheme: string
   currency: string
   reportingPeriodStart?: Date
   reportingPeriodEnd?: Date
@@ -83,6 +84,7 @@ const createInitialWizardData = (): WizardData => ({
   generalInformation: {
     entityName: "",
     entityIdentifier: "",
+      entityIdentifierScheme: "",
     currency: "",
     reportingPeriodStart: undefined,
     reportingPeriodEnd: undefined,

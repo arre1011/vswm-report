@@ -1,19 +1,19 @@
 package org.vsme.backend.report;
 
 import org.springframework.stereotype.Component;
-import org.vsme.backend.report.model.ExcelDatapoint;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 @Component
 public class ExcelDatapointsRepo {
 
-    public List<ExcelDatapoint> getExcelDatapoints(String reportingPeriodStartMonth) {
-        return new ArrayList<>(List.of(
-                new ExcelDatapoint("entityName","template_reporting_entity_name"),
-                new ExcelDatapoint("entityIdentifier","template_reporting_entity_identifier"),
-                new ExcelDatapoint("currency","template_currency")
-                ));
+    private static final Map<String, String> DATAPOINT_TO_RANGE = Map.of(
+            "entityName", "template_reporting_entity_name",
+            "entityIdentifier", "template_reporting_entity_identifier",
+            "currency", "template_currency"
+    );
+
+    public Map<String, String> getNamedRanges() {
+        return DATAPOINT_TO_RANGE;
     }
 }

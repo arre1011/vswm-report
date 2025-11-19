@@ -8,7 +8,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.vsme.backend.report.model.Datapoint;
-import org.vsme.backend.report.model.ExcelDatapoint;
 import org.vsme.backend.report.model.NamedRangeUpdate;
 
 import java.io.ByteArrayOutputStream;
@@ -36,18 +35,18 @@ public class ExcelUpdateService {
     @PostConstruct
     public void loadTemplate() {
         try {
-            log.info("🔄 Loading VSME Excel template: {}", EXCEL_TEMPLATE);
+            log.info("Loading VSME Excel template: {}", EXCEL_TEMPLATE);
             ClassPathResource resource = new ClassPathResource(EXCEL_TEMPLATE);
             if (!resource.exists()) {
-                log.error("❌ Excel template not found: {}", EXCEL_TEMPLATE);
+                log.error("Excel template not found: {}", EXCEL_TEMPLATE);
                 throw new IllegalStateException("Excel template not found: " + EXCEL_TEMPLATE);
             }
             try (InputStream inputStream = resource.getInputStream()) {
                 templateBytes = inputStream.readAllBytes();
-                log.info("✅ Excel template loaded successfully ({} bytes)", templateBytes.length);
+                log.info("Excel template loaded successfully ({} bytes)", templateBytes.length);
             }
         } catch (IOException e) {
-            log.error("❌ Failed to load Excel template: {}", e.getMessage(), e);
+            log.error("Failed to load Excel template: {}", e.getMessage(), e);
             throw new IllegalStateException("Failed to load Excel template", e);
         }
     }
@@ -56,21 +55,20 @@ public class ExcelUpdateService {
         if (templateBytes == null) {
             throw new IllegalStateException("Excel template not loaded. Application startup failed.");
         }
-        
-        List<ExcelDatapoint> excelDataPoints = excelDatapointsRepo.getExcelDatapoints(null);
-        List<NamedRangeUpdate> updates = createNamedRangeUpdates(dataPoints, excelDataPoints);
+        Map<String, String> namedRanges = excelDatapointsRepo.getNamedRanges();
+        List<NamedRangeUpdate> updates = createNamedRangeUpdates(dataPoints, namedRanges);
         
         // Create new workbook from cached template (thread-safe)
         Workbook workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(templateBytes));
         
         try {
             // Update named ranges
-            log.info("📝 Updating {} named ranges in Excel", updates.size());
+            log.info("Updating {} named ranges in Excel", updates.size());
             for (NamedRangeUpdate update : updates) {
                 log.debug("Updating named range '{}' with value '{}'", update.excelNamedRange(), update.value());
                 updateNamedRange(workbook, update.excelNamedRange(), update.value());
             }
-            log.info("✅ Excel update completed");
+            log.info("Excel update completed");
             
             // Convert to byte array
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -81,11 +79,7 @@ public class ExcelUpdateService {
         }
     }
     
-    private List<NamedRangeUpdate> createNamedRangeUpdates(List<Datapoint> dataPoints, List<ExcelDatapoint> excelDataPoints) {
-        // Map excel datapoints by ID for quick lookup
-        Map<String, String> excelMap = excelDataPoints.stream()
-                .collect(Collectors.toMap(ExcelDatapoint::datapointId, ExcelDatapoint::excelNamedRange));
-
+    private List<NamedRangeUpdate> createNamedRangeUpdates(List<Datapoint> dataPoints, Map<String, String> excelMap) {
         // Preserve last provided value for each datapoint id
         Map<String, String> datapointValues = dataPoints.stream()
                 .collect(Collectors.toMap(
@@ -132,7 +126,7 @@ public class ExcelUpdateService {
             updates.add(new NamedRangeUpdate(namedRange, date.toString()));
             log.debug("Prepared date update for '{}' with value {}", namedRange, date);
         } catch (DateTimeException ex) {
-            log.warn("⚠️ Invalid date for named range '{}': year={}, month={}, day={}", namedRange, year, month, resolvedDay);
+            log.warn("Invalid date for named range '{}': year={}, month={}, day={}", namedRange, year, month, resolvedDay);
         }
     }
 
@@ -143,7 +137,7 @@ public class ExcelUpdateService {
         try {
             return Integer.parseInt(rawValue.trim());
         } catch (NumberFormatException ex) {
-            log.warn("⚠️ Unable to parse integer from '{}'", rawValue);
+            log.warn("Unable to parse integer from '{}'", rawValue);
             return null;
         }
     }
@@ -151,17 +145,17 @@ public class ExcelUpdateService {
     private void updateNamedRange(Workbook workbook, String namedRange, String value) {
         var name = workbook.getName(namedRange);
         if (name == null) {
-            log.warn("⚠️ Named range '{}' not found in workbook", namedRange);
+            log.warn("Named range '{}' not found in workbook", namedRange);
             return;
         }
         
         String formula = name.getRefersToFormula();
         if (formula == null || formula.isEmpty()) {
-            log.warn("⚠️ Named range '{}' has no formula", namedRange);
+            log.warn("Named range '{}' has no formula", namedRange);
             return;
         }
         
-        log.debug("Processing named range '{}' with formula: {}", namedRange, formula);
+            log.debug("Processing named range '{}' with formula: {}", namedRange, formula);
         
         try {
             // Parse formula (format: 'Sheet Name'!$A$1 or SheetName!$A$1)
@@ -200,7 +194,7 @@ public class ExcelUpdateService {
             
             var sheet = workbook.getSheet(sheetName);
             if (sheet == null) {
-                log.warn("⚠️ Sheet '{}' not found for named range '{}'", sheetName, namedRange);
+                log.warn("Sheet '{}' not found for named range '{}'", sheetName, namedRange);
                 return;
             }
             
@@ -215,10 +209,10 @@ public class ExcelUpdateService {
             }
             
             cell.setCellValue(value);
-            log.info("✅ Updated named range '{}' -> sheet '{}', cell {}{} with value '{}'", 
+            log.debug("Updated named range '{}' -> sheet '{}', cell {}{} with value '{}'",
                     namedRange, sheetName, colStr, rowIndex + 1, value);
         } catch (Exception e) {
-            log.error("❌ Error updating named range '{}' with formula '{}': {}", 
+            log.error("Error updating named range '{}' with formula '{}': {}", 
                     namedRange, formula, e.getMessage(), e);
         }
     }

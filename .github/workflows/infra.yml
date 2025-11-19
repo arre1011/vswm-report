@@ -29,6 +29,9 @@ jobs:
       TFSTATE_CONTAINER: ${{ vars.TFSTATE_CONTAINER }}
       TFSTATE_KEY: ${{ vars.TFSTATE_KEY || format('{0}-{1}.tfstate', 'infra', github.ref_name) }}
       ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,6 +45,11 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         # 👆 Authentifiziert den Workflow gegen Azure ohne Secrets (OpenID Connect).
 
+      - name: Debug ARM env
+        run: |
+          echo "ARM_CLIENT_ID=${ARM_CLIENT_ID}"
+          echo "ARM_TENANT_ID=${ARM_TENANT_ID}"
+          echo "ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID}"  
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:

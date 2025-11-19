@@ -14,6 +14,10 @@ import org.vsme.backend.report.model.NamedRangeUpdate;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,9 +65,12 @@ public class ExcelUpdateService {
         
         try {
             // Update named ranges
+            log.info("📝 Updating {} named ranges in Excel", updates.size());
             for (NamedRangeUpdate update : updates) {
+                log.debug("Updating named range '{}' with value '{}'", update.excelNamedRange(), update.value());
                 updateNamedRange(workbook, update.excelNamedRange(), update.value());
             }
+            log.info("✅ Excel update completed");
             
             // Convert to byte array
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -78,35 +85,141 @@ public class ExcelUpdateService {
         // Map excel datapoints by ID for quick lookup
         Map<String, String> excelMap = excelDataPoints.stream()
                 .collect(Collectors.toMap(ExcelDatapoint::datapointId, ExcelDatapoint::excelNamedRange));
-        
-        // Combine datapoint values with excel named ranges
-        return dataPoints.stream()
-                .filter(datapoint -> excelMap.containsKey(datapoint.datapointId()))
-                .map(datapoint -> new NamedRangeUpdate(
-                        excelMap.get(datapoint.datapointId()),
-                        datapoint.values()
-                ))
-                .toList();
+
+        // Preserve last provided value for each datapoint id
+        Map<String, String> datapointValues = dataPoints.stream()
+                .collect(Collectors.toMap(
+                        Datapoint::datapointId,
+                        Datapoint::values,
+                        (existing, replacement) -> replacement,
+                        LinkedHashMap::new
+                ));
+
+        List<NamedRangeUpdate> updates = datapointValues.entrySet()
+                .stream()
+                .filter(entry -> excelMap.containsKey(entry.getKey()))
+                .map(entry -> new NamedRangeUpdate(excelMap.get(entry.getKey()), entry.getValue()))
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+
+        // Combine reporting period fields into ISO dates for the template
+        addDateUpdate(datapointValues, updates,
+                "reportingPeriodStartYear", "reportingPeriodStartMonth", "reportingPeriodStartDay",
+                "template_reporting_period_startdate");
+        addDateUpdate(datapointValues, updates,
+                "reportingPeriodEndYear", "reportingPeriodEndMonth", "reportingPeriodEndDay",
+                "template_reporting_period_enddate");
+
+        return updates;
+    }
+
+    private void addDateUpdate(Map<String, String> datapointValues,
+                               List<NamedRangeUpdate> updates,
+                               String yearKey,
+                               String monthKey,
+                               String dayKey,
+                               String namedRange) {
+        Integer year = parseInteger(datapointValues.get(yearKey));
+        Integer month = parseInteger(datapointValues.get(monthKey));
+        Integer day = parseInteger(datapointValues.get(dayKey));
+
+        if (year == null || month == null) {
+            return;
+        }
+
+        int resolvedDay = day != null ? day : 1;
+        try {
+            LocalDate date = LocalDate.of(year, month, resolvedDay);
+            updates.add(new NamedRangeUpdate(namedRange, date.toString()));
+            log.debug("Prepared date update for '{}' with value {}", namedRange, date);
+        } catch (DateTimeException ex) {
+            log.warn("⚠️ Invalid date for named range '{}': year={}, month={}, day={}", namedRange, year, month, resolvedDay);
+        }
+    }
+
+    private Integer parseInteger(String rawValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(rawValue.trim());
+        } catch (NumberFormatException ex) {
+            log.warn("⚠️ Unable to parse integer from '{}'", rawValue);
+            return null;
+        }
     }
     
     private void updateNamedRange(Workbook workbook, String namedRange, String value) {
         var name = workbook.getName(namedRange);
-        if (name == null) return;
-        
-        var cellRef = new org.apache.poi.ss.util.CellReference(name.getRefersToFormula());
-        var sheet = workbook.getSheet(cellRef.getSheetName());
-        if (sheet == null) return;
-        
-        var row = sheet.getRow(cellRef.getRow());
-        if (row == null) {
-            row = sheet.createRow(cellRef.getRow());
+        if (name == null) {
+            log.warn("⚠️ Named range '{}' not found in workbook", namedRange);
+            return;
         }
         
-        var cell = row.getCell(cellRef.getCol());
-        if (cell == null) {
-            cell = row.createCell(cellRef.getCol());
+        String formula = name.getRefersToFormula();
+        if (formula == null || formula.isEmpty()) {
+            log.warn("⚠️ Named range '{}' has no formula", namedRange);
+            return;
         }
         
-        cell.setCellValue(value);
+        log.debug("Processing named range '{}' with formula: {}", namedRange, formula);
+        
+        try {
+            // Parse formula (format: 'Sheet Name'!$A$1 or SheetName!$A$1)
+            String sheetName;
+            String cellRef;
+            
+            if (formula.contains("!")) {
+                int exclamationIndex = formula.indexOf('!');
+                String sheetPart = formula.substring(0, exclamationIndex);
+                cellRef = formula.substring(exclamationIndex + 1);
+                
+                // Remove quotes if present
+                if (sheetPart.startsWith("'") && sheetPart.endsWith("'")) {
+                    sheetName = sheetPart.substring(1, sheetPart.length() - 1);
+                } else {
+                    sheetName = sheetPart;
+                }
+            } else {
+                // No sheet name, use first sheet
+                sheetName = workbook.getSheetName(0);
+                cellRef = formula;
+            }
+            
+            // Parse cell reference (format: $A$1 or A1, or range $A$1:$B$2 - use first cell)
+            // Handle ranges by taking only the first cell
+            if (cellRef.contains(":")) {
+                cellRef = cellRef.split(":")[0];
+            }
+            cellRef = cellRef.replace("$", "");
+            String colStr = cellRef.replaceAll("\\d+", "");
+            int colIndex = org.apache.poi.ss.util.CellReference.convertColStringToIndex(colStr);
+            int rowIndex = Integer.parseInt(cellRef.replaceAll("[A-Z]+", "")) - 1; // Excel is 1-based
+            
+            log.debug("Parsed: sheet='{}', cell={}{}, row={}, col={}", 
+                    sheetName, colStr, rowIndex + 1, rowIndex, colIndex);
+            
+            var sheet = workbook.getSheet(sheetName);
+            if (sheet == null) {
+                log.warn("⚠️ Sheet '{}' not found for named range '{}'", sheetName, namedRange);
+                return;
+            }
+            
+            var row = sheet.getRow(rowIndex);
+            if (row == null) {
+                row = sheet.createRow(rowIndex);
+            }
+            
+            var cell = row.getCell(colIndex);
+            if (cell == null) {
+                cell = row.createCell(colIndex);
+            }
+            
+            cell.setCellValue(value);
+            log.info("✅ Updated named range '{}' -> sheet '{}', cell {}{} with value '{}'", 
+                    namedRange, sheetName, colStr, rowIndex + 1, value);
+        } catch (Exception e) {
+            log.error("❌ Error updating named range '{}' with formula '{}': {}", 
+                    namedRange, formula, e.getMessage(), e);
+        }
     }
 }

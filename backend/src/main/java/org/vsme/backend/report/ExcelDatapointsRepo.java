@@ -11,11 +11,9 @@ public class ExcelDatapointsRepo {
 
     public List<ExcelDatapoint> getExcelDatapoints(String reportingPeriodStartMonth) {
         return new ArrayList<>(List.of(
-                new ExcelDatapoint("entityName","NameOfReportingEntity"),
-                new ExcelDatapoint("entityIdentifier","IdentifierOfReportingEntity"),
-                new ExcelDatapoint("currency","CurrencyUsedInReport"),
-                new ExcelDatapoint("reportingPeriodStartYear","StartingYearOfReportingPeriod"),
-                new ExcelDatapoint("reportingPeriodStartMonth","StartingMonthOfReportingPeriod")
+                new ExcelDatapoint("entityName","template_reporting_entity_name"),
+                new ExcelDatapoint("entityIdentifier","template_reporting_entity_identifier"),
+                new ExcelDatapoint("currency","template_currency")
                 ));
     }
 }

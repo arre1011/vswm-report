@@ -25,6 +25,8 @@ import java.util.List;
 @Tag(name = "Reports", description = "API for generating VSME Excel reports")
 public class ReportController {
 
+    private static final String EXCEL_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
     final ReportService reportService;
 
     @Operation(
@@ -50,7 +52,7 @@ public class ReportController {
             )
     })
     @PostMapping(
-            produces = MediaType.APPLICATION_OCTET_STREAM_VALUE,
+            produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE, EXCEL_MEDIA_TYPE},
             consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<byte[]> report(
@@ -92,6 +94,7 @@ public class ReportController {
             @RequestBody List<Datapoint> datapoints) throws IOException {
         byte[] vsmeExcelTemplate = reportService.updateExcel(datapoints);
         return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(EXCEL_MEDIA_TYPE))
                 .header("Content-Disposition", "attachment; filename=VSME_Report.xlsx")
                 .body(vsmeExcelTemplate);
     }

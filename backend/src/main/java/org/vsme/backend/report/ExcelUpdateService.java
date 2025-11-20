@@ -8,7 +8,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.vsme.backend.report.model.Datapoint;
-import org.vsme.backend.report.model.NamedRangeUpdate;
+import org.vsme.backend.report.model.ExcelUpdate;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ExcelUpdateService {
 
-    private final ExcelDatapointsRepo excelDatapointsRepo;
+    private final ExcelDataPointsRepo excelDatapointsRepo;
     private static final String EXCEL_TEMPLATE = "VSME-Digital-Template-1.1.0.xlsx";
     
     // Cached template as byte array (thread-safe)
@@ -55,8 +55,8 @@ public class ExcelUpdateService {
         if (templateBytes == null) {
             throw new IllegalStateException("Excel template not loaded. Application startup failed.");
         }
-        Map<String, String> namedRanges = excelDatapointsRepo.getNamedRanges();
-        List<NamedRangeUpdate> updates = createNamedRangeUpdates(dataPoints, namedRanges);
+        List<ExcelUpdate> namedRanges = excelDatapointsRepo.getExcelDataPoints();
+        List<ExcelUpdate> updates = createNamedRangeUpdates(dataPoints, namedRanges);
         
         // Create new workbook from cached template (thread-safe)
         Workbook workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(templateBytes));
@@ -64,11 +64,17 @@ public class ExcelUpdateService {
         try {
             // Update named ranges
             log.info("Updating {} named ranges in Excel", updates.size());
-            for (NamedRangeUpdate update : updates) {
+            for (ExcelUpdate update : updates) {
                 log.debug("Updating named range '{}' with value '{}'", update.excelNamedRange(), update.value());
                 updateNamedRange(workbook, update.excelNamedRange(), update.value());
             }
             log.info("Excel update completed");
+
+            // Ensure formulas and validation logic are recalculated when the user opens the workbook
+            workbook.setForceFormulaRecalculation(true);
+            workbook.getCreationHelper()
+                    .createFormulaEvaluator()
+                    .clearAllCachedResultValues();
             
             // Convert to byte array
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -79,68 +85,10 @@ public class ExcelUpdateService {
         }
     }
     
-    private List<NamedRangeUpdate> createNamedRangeUpdates(List<Datapoint> dataPoints, Map<String, String> excelMap) {
-        // Preserve last provided value for each datapoint id
-        Map<String, String> datapointValues = dataPoints.stream()
-                .collect(Collectors.toMap(
-                        Datapoint::datapointId,
-                        Datapoint::values,
-                        (existing, replacement) -> replacement,
-                        LinkedHashMap::new
-                ));
-
-        List<NamedRangeUpdate> updates = datapointValues.entrySet()
-                .stream()
-                .filter(entry -> excelMap.containsKey(entry.getKey()))
-                .map(entry -> new NamedRangeUpdate(excelMap.get(entry.getKey()), entry.getValue()))
-                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-
-        // Combine reporting period fields into ISO dates for the template
-        addDateUpdate(datapointValues, updates,
-                "reportingPeriodStartYear", "reportingPeriodStartMonth", "reportingPeriodStartDay",
-                "template_reporting_period_startdate");
-        addDateUpdate(datapointValues, updates,
-                "reportingPeriodEndYear", "reportingPeriodEndMonth", "reportingPeriodEndDay",
-                "template_reporting_period_enddate");
-
-        return updates;
+    private List<ExcelUpdate> createNamedRangeUpdates(List<Datapoint> dataPoints, List<ExcelUpdate> excelDataPoints) {
+        // In dieser Funktion sollen die Values aus dataPoints in excelDataPoints übertragen werden. Dass mapping kann über die Variable DatapointsId gemacht werden
     }
 
-    private void addDateUpdate(Map<String, String> datapointValues,
-                               List<NamedRangeUpdate> updates,
-                               String yearKey,
-                               String monthKey,
-                               String dayKey,
-                               String namedRange) {
-        Integer year = parseInteger(datapointValues.get(yearKey));
-        Integer month = parseInteger(datapointValues.get(monthKey));
-        Integer day = parseInteger(datapointValues.get(dayKey));
-
-        if (year == null || month == null) {
-            return;
-        }
-
-        int resolvedDay = day != null ? day : 1;
-        try {
-            LocalDate date = LocalDate.of(year, month, resolvedDay);
-            updates.add(new NamedRangeUpdate(namedRange, date.toString()));
-            log.debug("Prepared date update for '{}' with value {}", namedRange, date);
-        } catch (DateTimeException ex) {
-            log.warn("Invalid date for named range '{}': year={}, month={}, day={}", namedRange, year, month, resolvedDay);
-        }
-    }
-
-    private Integer parseInteger(String rawValue) {
-        if (rawValue == null || rawValue.isBlank()) {
-            return null;
-        }
-        try {
-            return Integer.parseInt(rawValue.trim());
-        } catch (NumberFormatException ex) {
-            log.warn("Unable to parse integer from '{}'", rawValue);
-            return null;
-        }
-    }
     
     private void updateNamedRange(Workbook workbook, String namedRange, String value) {
         var name = workbook.getName(namedRange);

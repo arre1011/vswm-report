@@ -1,7 +1,9 @@
 package org.vsme.backend.report.model;
 
-public record NamedRangeUpdate(
+public record ExcelUpdate(
+        String datapointID,
         String excelNamedRange,
+        String excelCell,
         String value
 ) {
 }

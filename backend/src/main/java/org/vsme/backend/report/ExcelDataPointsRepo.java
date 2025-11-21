@@ -39,19 +39,19 @@ public class ExcelDataPointsRepo {
                 new ExcelUpdate(
                         "reportingPeriodStartYear",
                         null,
-                        "D6",
+                        "'General Information'!$D$6",
                         null
                 ),
                 new ExcelUpdate(
                         "reportingPeriodStartMonth",
                         null,
-                        "D7",
+                        "'General Information'!$D$7",
                         null
                 ),
                 new ExcelUpdate(
                         "reportingPeriodStartDay",
                         null,
-                        "D8",
+                        "'General Information'!$D$8",
                         null
                 ),
                 new ExcelUpdate(
@@ -63,19 +63,19 @@ public class ExcelDataPointsRepo {
                 new ExcelUpdate(
                         "reportingPeriodEndYear",
                         null,
-                        "D10",
+                        "'General Information'!$D$10",
                         null
                 ),
                 new ExcelUpdate(
                         "reportingPeriodEndMonth",
                         null,
-                        "D11",
+                        "'General Information'!$D$11",
                         null
                 ),
                 new ExcelUpdate(
                         "reportingPeriodEndDay",
                         null,
-                        "D12",
+                        "'General Information'!$D$12",
                         null
                 ),
                 new ExcelUpdate(

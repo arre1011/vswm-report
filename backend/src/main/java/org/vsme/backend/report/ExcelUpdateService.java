@@ -13,12 +13,11 @@ import org.vsme.backend.report.model.ExcelUpdate;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.DateTimeException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,18 +54,28 @@ public class ExcelUpdateService {
         if (templateBytes == null) {
             throw new IllegalStateException("Excel template not loaded. Application startup failed.");
         }
-        List<ExcelUpdate> namedRanges = excelDatapointsRepo.getExcelDataPoints();
-        List<ExcelUpdate> updates = createNamedRangeUpdates(dataPoints, namedRanges);
+        List<ExcelUpdate> excelMappings = excelDatapointsRepo.getExcelDataPoints();
+        List<ExcelUpdate> updates = createNamedRangeUpdates(dataPoints, excelMappings);
         
         // Create new workbook from cached template (thread-safe)
         Workbook workbook = new XSSFWorkbook(new java.io.ByteArrayInputStream(templateBytes));
         
         try {
             // Update named ranges
-            log.info("Updating {} named ranges in Excel", updates.size());
+            log.info("Applying {} updates to the Excel template", updates.size());
             for (ExcelUpdate update : updates) {
-                log.debug("Updating named range '{}' with value '{}'", update.excelNamedRange(), update.value());
-                updateNamedRange(workbook, update.excelNamedRange(), update.value());
+                if (update.value() == null || update.value().isBlank()) {
+                    continue;
+                }
+                if (update.excelNamedRange() != null && !update.excelNamedRange().isBlank()) {
+                    log.debug("Updating named range '{}' with value '{}'", update.excelNamedRange(), update.value());
+                    updateNamedRange(workbook, update.excelNamedRange(), update.value());
+                } else if (update.excelCell() != null && !update.excelCell().isBlank()) {
+                    log.debug("Updating cell '{}' with value '{}'", update.excelCell(), update.value());
+                    updateCell(workbook, update.excelCell(), update.value());
+                } else {
+                    log.warn("No target defined for datapoint '{}'", update.datapointID());
+                }
             }
             log.info("Excel update completed");
 
@@ -86,9 +95,71 @@ public class ExcelUpdateService {
     }
     
     private List<ExcelUpdate> createNamedRangeUpdates(List<Datapoint> dataPoints, List<ExcelUpdate> excelDataPoints) {
-        // In dieser Funktion sollen die Values aus dataPoints in excelDataPoints übertragen werden. Dass mapping kann über die Variable DatapointsId gemacht werden
+        Map<String, String> datapointValues = dataPoints.stream()
+                .collect(Collectors.toMap(
+                        Datapoint::datapointId,
+                        Datapoint::values,
+                        (existing, replacement) -> replacement,
+                        LinkedHashMap::new
+                ));
+
+        return excelDataPoints.stream()
+                .map(mapping -> {
+                    String value = datapointValues.get(mapping.datapointID());
+                    if (value == null) {
+                        return null;
+                    }
+                    return new ExcelUpdate(
+                            mapping.datapointID(),
+                            mapping.excelNamedRange(),
+                            mapping.excelCell(),
+                            value
+                    );
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    private void updateCell(Workbook workbook, String cellReference, String value) {
+        String sheetName;
+        String cellRef = cellReference;
+
+        if (cellReference.contains("!")) {
+            int separator = cellReference.indexOf('!');
+            sheetName = cellReference.substring(0, separator);
+            cellRef = cellReference.substring(separator + 1);
+            if (sheetName.startsWith("'") && sheetName.endsWith("'")) {
+                sheetName = sheetName.substring(1, sheetName.length() - 1);
+            }
+        } else {
+            sheetName = workbook.getSheetName(0);
+        }
+
+        cellRef = cellRef.replace("$", "");
+        String colStr = cellRef.replaceAll("\\d+", "");
+        int colIndex = org.apache.poi.ss.util.CellReference.convertColStringToIndex(colStr);
+        int rowIndex = Integer.parseInt(cellRef.replaceAll("[A-Z]+", "")) - 1;
+
+        var sheet = workbook.getSheet(sheetName);
+        if (sheet == null) {
+            log.warn("Sheet '{}' not found for cell reference '{}'", sheetName, cellReference);
+            return;
+        }
+
+        var row = sheet.getRow(rowIndex);
+        if (row == null) {
+            row = sheet.createRow(rowIndex);
+        }
+
+        var cell = row.getCell(colIndex);
+        if (cell == null) {
+            cell = row.createCell(colIndex);
+        }
+
+        setNumericAwareValue(cell, value);
+        log.debug("Updated cell '{}' on sheet '{}' with value '{}'", cellRef, sheetName, value);
+    }
+    
     
     private void updateNamedRange(Workbook workbook, String namedRange, String value) {
         var name = workbook.getName(namedRange);
@@ -162,6 +233,24 @@ public class ExcelUpdateService {
         } catch (Exception e) {
             log.error("Error updating named range '{}' with formula '{}': {}", 
                     namedRange, formula, e.getMessage(), e);
+        }
+    }
+
+    private void setNumericAwareValue(org.apache.poi.ss.usermodel.Cell cell, String value) {
+        if (value == null) {
+            cell.setBlank();
+            return;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            cell.setBlank();
+            return;
+        }
+        try {
+            double numericValue = Double.parseDouble(trimmed);
+            cell.setCellValue(numericValue);
+        } catch (NumberFormatException ex) {
+            cell.setCellValue(value);
         }
     }
 }

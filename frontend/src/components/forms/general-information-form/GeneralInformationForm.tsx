@@ -2,7 +2,7 @@
 import { useWizard} from "@/stores/WizardStore.ts"
 import { useI18n } from "@/lib/i18n.tsx"
 import { ChangeEvent } from "react"
-import { B1XbrlInfo } from "@/components/forms/general-information-form/disclosures/B1XbrlInfo.tsx"
+import { B1XbrlInfo } from "@/components/forms/general-information-form/disclosures/b1-xbrl-info/B1XbrlInfo.tsx"
 import { B1BasisPreparation } from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/B1BasisPreparation.tsx"
 
 

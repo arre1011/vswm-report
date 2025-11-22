@@ -6,6 +6,9 @@ import {
   ReportingBasisOption,
 } from "@/stores/WizardStore.ts"
 import { ChangeEvent } from "react"
+import {
+    BasisModuleField
+} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/BasisModule.tsx";
 
 const basisModuleOptions: Array<{ value: BasisModuleOption; label: string }> = [
   { value: "Basic", label: "Basic Module Only" },
@@ -34,10 +37,16 @@ export function B1BasisPreparation({
     <Card>
       <CardHeader>
         <CardTitle>Basis for Preparation (B1)</CardTitle>
-        <CardDescription>Angaben zur Berichtsgrundlage und Methodik.</CardDescription>
+        <CardDescription>B1 - Basis for Preparation and other undertaking's general information from 2025-11-05 to 2025-11-19 [Always to be reported]		</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <BasisModuleField
+                value={general.basisModule}
+                onChange={(value) =>
+                    updateGeneralInformation({ basisModule: value as BasisModuleOption })
+                }
+            />
           <SelectWithInfo
             id="basisModule"
             label="Basis für Vorbereitung"

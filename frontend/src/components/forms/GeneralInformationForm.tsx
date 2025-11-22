@@ -8,6 +8,7 @@ import {
   ReportingBasisOption,
   EmployeeCountingMethod,
 } from "@/stores/WizardStore"
+import { useI18n } from "@/lib/i18n"
 import { ChangeEvent } from "react"
 
 const currencyOptions = [
@@ -44,6 +45,7 @@ const employeeCountingMethodOptions: Array<{ value: EmployeeCountingMethod; labe
 export function GeneralInformationForm() {
   const { data, updateGeneralInformation } = useWizard()
   const general = data.generalInformation
+  const { t } = useI18n()
 
   const handleInputChange =
     (field: keyof typeof general) =>
@@ -55,13 +57,13 @@ export function GeneralInformationForm() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Information on the report necessary for  XBRL</CardTitle>
+          <CardTitle>{t("generalInformation.sectionTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputWithInfo
               id="entityName"
-              label="Name of the reporting entity"
+              label={t("generalInformation.entityNameTitle")}
               value={general.entityName}
               onChange={handleInputChange("entityName")}
               required
@@ -269,5 +271,4 @@ export function GeneralInformationForm() {
     </>
   )
 }
-
 

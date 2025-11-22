@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ConfirmationStep } from "@/components/ConfirmationStep"
-import { GeneralInformationForm } from "@/components/forms/GeneralInformationForm"
+import { GeneralInformationForm } from "@/components/forms/general-information-form/GeneralInformationForm.tsx"
 import { EnvironmentalDisclosuresForm } from "@/components/forms/EnvironmentalDisclosuresForm"
 import { SocialDisclosuresForm } from "@/components/forms/SocialDisclosuresForm"
 import { GovernanceDisclosuresForm } from "@/components/forms/GovernanceDisclosuresForm"

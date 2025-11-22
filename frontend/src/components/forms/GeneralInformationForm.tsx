@@ -9,7 +9,9 @@ import {
   EmployeeCountingMethod,
 } from "@/stores/WizardStore"
 import { useI18n } from "@/lib/i18n"
-import { ChangeEvent } from "react"
+import { ChangeEvent, FocusEvent, useEffect } from "react"
+import { z } from "zod"
+import { useForm } from "@tanstack/react-form"
 
 const currencyOptions = [
   { value: "EUR", label: "EUR – Euro" },
@@ -42,10 +44,96 @@ const employeeCountingMethodOptions: Array<{ value: EmployeeCountingMethod; labe
   { value: "Both", label: "Beides / gemischt" },
 ]
 
+/**
+ * TanStack Form returns rich error objects (e.g., Zod issues) so we translate them into plain strings for our UI.
+ * That way React never tries to render the complex object directly (which would throw) and beginners can read a simple message.
+ */
+const extractErrorMessage = (error: unknown): string | undefined => {
+  if (!error) {
+    return undefined
+  }
+  if (typeof error === "string") {
+    return error
+  }
+  if (typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message
+    return typeof message === "string" ? message : undefined
+  }
+  return undefined
+}
+
+/**
+ * We keep this schema close to the form component so it is obvious which business rules currently govern the
+ * `entityName` field. The inline comments explain _why_ every single constraint is in place, which is extra helpful
+ * while we onboard strict validation to more inputs later on.
+ */
+const entityNameSchema = z
+  .string({
+    /**
+     * Requiring a string type (with a helpful error message) makes sure TanStack Form refuses everything that is not plain
+     * text (for example, numbers or JSON objects injected through developer tools). This protects against tampering before
+     * the data can reach our Excel/XBRL export.
+     */
+    required_error:
+      "Please provide the legal entity name so we can reference a concrete reporting entity inside the XBRL contexts.",
+    invalid_type_error:
+      "Entity name must be text. Numbers or structured data would not be a valid legal name and could break the XBRL output.",
+  })
+/**
+ * `.trim()` removes leading and trailing whitespace. Without stripping invisible characters a user could accidentally
+ * create names like `"ACME<space><space><space>"` that look fine in the UI but turn into different identifiers once exported.
+ * Trimming up-front therefore keeps the stored value deterministic and prevents confusing duplicates.
+ */
+.trim()
+  /**
+   * `.min(3)` enforces that the user enters more than a couple of random letters.
+   * Two characters are usually not enough to uniquely describe a company, so we push for at least 3 readable characters.
+   */
+  .min(3, {
+    message:
+      "Please enter at least three readable characters so the reporting entity can be uniquely identified.",
+  })
+  /**
+   * `.max(120)` blocks extremely long names that could be used in denial-of-service attempts (by slowing Excel down) or
+   * create unwieldy disclosure tables. 120 characters still allows descriptive names but caps potential abuse.
+   */
+  .max(120, {
+    message:
+      "Please stay under 120 characters. This keeps the exported disclosure compact and prevents denial-of-service style inputs.",
+  })
+  /**
+   * The regex whitelists common characters found in legal names (letters from every language, digits, whitespace, and a
+   * few safe punctuation marks). By rejecting `<`, `>`, backticks, etc. we lower the risk of script or formula injection
+   * when the name is later rendered inside HTML or Excel.
+   */
+  .regex(/^[\p{L}\p{N}\s.,'()&/-]+$/u, {
+    message:
+      "Only use letters, digits, spaces and safe punctuation such as . , ' ( ) & / -. This prevents script injection in Excel/XBRL.",
+  })
+
 export function GeneralInformationForm() {
   const { data, updateGeneralInformation } = useWizard()
   const general = data.generalInformation
   const { t } = useI18n()
+  const generalInfoForm = useForm({
+    defaultValues: { entityName: general.entityName },
+    onSubmit: async () => {
+      /**
+       * We are not triggering a full submit yet, but `useForm` requires an `onSubmit` handler.
+       * Keeping it here avoids runtime errors once we start validating additional inputs.
+       */
+    },
+  })
+  /**
+   * Whenever the global wizard store resets (for example after finishing the wizard) we want the form field
+   * to mirror that external change. Syncing it manually keeps the TanStack form state and our Zustand store aligned.
+   */
+  useEffect(() => {
+    const currentFormValue = generalInfoForm.getFieldValue("entityName")
+    if (general.entityName !== currentFormValue) {
+      generalInfoForm.setFieldValue("entityName", general.entityName, { dontUpdateMeta: true })
+    }
+  }, [general.entityName, generalInfoForm])
 
   const handleInputChange =
     (field: keyof typeof general) =>
@@ -61,16 +149,58 @@ export function GeneralInformationForm() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputWithInfo
-              id="entityName"
-              label={t("generalInformation.entityNameTitle")}
-              value={general.entityName}
-              onChange={handleInputChange("entityName")}
-              required
-              placeholder="e.g. Company XYZ"
-              infoTitle="N/A"
-              infoDescription="N/A at the moment"
-            />
+            <generalInfoForm.Field
+              name="entityName"
+              validators={{
+                /**
+                 * By validating on every change _and_ blur we give immediate feedback and still re-check once the user leaves the field.
+                 * This combination catches mistakes early without waiting for a form submission.
+                 */
+                onChange: entityNameSchema,
+                onBlur: entityNameSchema,
+              }}
+            >
+              {(field) => {
+                const shouldDisplayError = field.state.meta.isTouched || field.state.meta.isBlurred
+                const firstFieldError = field.state.meta.errors?.[0]
+                const entityNameError = shouldDisplayError ? extractErrorMessage(firstFieldError) : undefined
+
+                const handleEntityNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+                  const newValue = event.target.value
+                  field.handleChange(newValue)
+                  updateGeneralInformation({ entityName: newValue })
+                }
+
+                /**
+                 * On blur we additionally normalize whitespace (collapsing long runs of spaces and trimming again) to avoid storing
+                 * invisible characters that attackers could use to hide data. The sanitized value then flows into both TanStack Form
+                 * and our Zustand store to keep every layer clean.
+                 */
+                const handleEntityNameBlur = (event: FocusEvent<HTMLInputElement>) => {
+                  const normalizedValue = event.target.value.replace(/\s{2,}/g, " ").trim()
+                  if (normalizedValue !== event.target.value) {
+                    field.handleChange(normalizedValue)
+                    updateGeneralInformation({ entityName: normalizedValue })
+                  }
+                  field.handleBlur()
+                }
+
+                return (
+                  <InputWithInfo
+                    id="entityName"
+                    label={t("generalInformation.entityNameTitle")}
+                    value={field.state.value ?? ""}
+                    onChange={handleEntityNameChange}
+                    onBlur={handleEntityNameBlur}
+                    required
+                    placeholder="e.g. Company XYZ"
+                    infoTitle="N/A"
+                    infoDescription="N/A at the moment"
+                    error={entityNameError}
+                  />
+                )
+              }}
+            </generalInfoForm.Field>
 
 
 
@@ -271,4 +401,3 @@ export function GeneralInformationForm() {
     </>
   )
 }
-

@@ -17,6 +17,7 @@ interface InputWithInfoProps extends InputProps {
   infoTitle: string
   infoDescription: string
   containerClassName?: string
+  error?: string
 }
 
 export function InputWithInfo({
@@ -26,14 +27,17 @@ export function InputWithInfo({
   containerClassName,
   className,
   id,
+  error,
   ...inputProps
 }: InputWithInfoProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const inputId = id ?? inputProps.name
+  const errorId = inputId && error ? `${inputId}-error` : undefined
 
   return (
     <div className={cn("space-y-2", containerClassName)}>
       <div className="flex items-center gap-2">
-        <Label htmlFor={id}>{label}</Label>
+        <Label htmlFor={inputId}>{label}</Label>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <button
@@ -56,11 +60,23 @@ export function InputWithInfo({
         </Dialog>
       </div>
       <Input
-        id={id}
-        className={cn("transition-all focus:scale-[1.02]", className)}
+        id={inputId}
+        aria-invalid={Boolean(error)}
+        aria-describedby={errorId}
+        className={cn(
+          "transition-all focus:scale-[1.02]",
+          error
+            ? "border-destructive focus-visible:ring-destructive focus-visible:ring-offset-2"
+            : "focus-visible:ring-ring focus-visible:ring-offset-2",
+          className,
+        )}
         {...inputProps}
       />
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }
-

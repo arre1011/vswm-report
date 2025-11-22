@@ -24,7 +24,7 @@ interface I18nContextValue {
 const I18nContext = createContext<I18nContextValue | null>(null)
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>("de")
+  const [language, setLanguage] = useState<Language>("en")
 
   const translate = useCallback(
     (key: TranslationKey) => {

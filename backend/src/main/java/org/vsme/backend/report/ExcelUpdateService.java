@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ExcelUpdateService {
+    // TODO: soll in der zukunft irgendwann Refactoring  Wenn wir backend Validierung implementieren sollte diese Klasse und die gesamtstruktur der Anwendung noch mal überdacht werden
 
     private final ExcelDataPointsRepo excelDatapointsRepo;
     private static final String EXCEL_TEMPLATE = "VSME-Digital-Template-1.1.0.xlsx";

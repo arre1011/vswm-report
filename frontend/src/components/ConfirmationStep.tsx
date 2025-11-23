@@ -69,7 +69,7 @@ export function ConfirmationStep() {
                   : "-"
               }
             />
-            <InfoRow label="Basis for Preparation" value={generalInformation.basisModule} />
+            <InfoRow label="Basis for Preparation" value={generalInformation.basisForPreparation} />
             <InfoRow label="Basis for Reporting" value={generalInformation.basisForReporting} />
             <InfoRow label="Umsatz" value={generalInformation.turnover} />
             <InfoRow label="Mitarbeitende" value={generalInformation.employeeCount} />

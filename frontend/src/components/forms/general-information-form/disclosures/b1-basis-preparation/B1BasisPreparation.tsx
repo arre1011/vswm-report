@@ -9,11 +9,10 @@ import { ChangeEvent } from "react"
 import {
     BasisModuleField
 } from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/BasisModule.tsx";
+import {
+    BasisForReporting
+} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/BasisForReporting.tsx";
 
-const basisModuleOptions: Array<{ value: BasisModuleOption; label: string }> = [
-  { value: "Basic", label: "Basic Module Only" },
-  { value: "Basic & Comprehensive", label: "Basic & Comprehensive" },
-]
 
 const reportingBasisOptions: Array<{ value: ReportingBasisOption; label: string }> = [
   { value: "Consolidated", label: "Konsolidiert" },
@@ -41,24 +40,19 @@ export function B1BasisPreparation({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             <BasisModuleField
-                value={general.basisModule}
+                value={general.basisForPreparation}
                 onChange={(value) =>
-                    updateGeneralInformation({ basisModule: value as BasisModuleOption })
+                    updateGeneralInformation({ basisForPreparation: value as BasisModuleOption })
                 }
             />
-          <SelectWithInfo
-            id="basisModule"
-            label="Basis für Vorbereitung"
-            value={general.basisModule}
-            onValueChange={(value) =>
-              updateGeneralInformation({ basisModule: value as BasisModuleOption })
-            }
-            options={basisModuleOptions}
-            placeholder="Modul wählen"
-            infoTitle="Basis for Preparation"
-            infoDescription="Wählen Sie, ob der Bericht nur das Basic Module oder zusätzlich das Comprehensive Module abdeckt (Zeile 32 im Template)."
-          />
+
+            <BasisForReporting
+              value={general.basisForReporting}
+              onChange={(value) =>
+                  updateGeneralInformation({ basisForReporting: value as string})}
+            />
 
           <SelectWithInfo
             id="basisForReporting"

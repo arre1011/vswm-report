@@ -83,6 +83,18 @@ public class ExcelDataPointsRepo {
                         "template_reporting_period_enddate",
                         null,
                         null
+                ),
+                new ExcelUpdate(
+                        "basisForPreparation",
+                        "BasisForPreparation",
+                        null,
+                        null
+                ),
+                new ExcelUpdate(
+                "basisForReporting",
+                "BasisForReporting",
+                null,
+                null
                 )
         ));
 

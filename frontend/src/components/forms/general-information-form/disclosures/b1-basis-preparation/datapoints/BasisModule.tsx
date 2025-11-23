@@ -2,13 +2,13 @@ import {SelectWithInfo} from "@/components/ui/select-with-info.tsx";
 
 
 const basisModuleOptions = [
-    {value: "A", label: "Option A (Basic Module only)" },
-    { value: "BasisForPreparation", label: "Option B (Basic Module and Comprehensive Module)"},
+    {value: "Option A (Basic Module only)", label: "Option A (Basic Module only)" },
+    {value: "Option B (Basic Module and Comprehensive Module)", label: "Option B (Basic Module and Comprehensive Module)"},
 ]
 
 interface BasisModuleProbs {
     value: string
-    onChange: (vlaue: string) => void
+    onChange: (value: string) => void
 }
 
 

@@ -15,8 +15,8 @@ export interface GeneralInformationData {
   currency: string
   reportingPeriodStart?: Date
   reportingPeriodEnd?: Date
-  basisModule: BasisModuleOption
-  basisForReporting: ReportingBasisOption
+  basisForPreparation: string
+  basisForReporting: string
   omittedDisclosures?: string
   turnover?: string
   employeeCount?: string
@@ -93,7 +93,7 @@ const createInitialWizardData = (): WizardData => ({
     currency: "",
     reportingPeriodStart: undefined,
     reportingPeriodEnd: undefined,
-    basisModule: "",
+    basisForPreparation: "",
     basisForReporting: "",
     omittedDisclosures: "",
     turnover: "",

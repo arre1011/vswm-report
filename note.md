@@ -8,7 +8,8 @@
 - Report Datebstruktur erarbeiten, noch unklar welceh vorm, eventuell json. Es wäre aber vermutlich auch sinnvoll die Struktur mal noch in ump oder DDD Darzustellen, besonders wenn wir inzukunft um den Gudians Teil erweitern wollen, sollten wir uns an der stelle vermtulich hier schon gedanken machen oder ist es vielleicht auch schon wieder zuweit gedacht und wir geben an das Backend einfach die Werte zurück, super Simpel 
 
 
-
+# Future Imple
+- Validierung mit tanstack und ich habe hierfür auch schon etwas recherchtier, was in der datei under /docs/future-impl/ zu fidnen ist 
 
 
 ### Report Struktur 

@@ -12,6 +12,12 @@ import {
 import {
     BasisForReporting
 } from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/BasisForReporting.tsx";
+import {
+    OmittedDisclosures
+} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/OmittedDisclosures.tsx";
+import {
+    SizeOfBalanceSheet
+} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/SizeOfBalanceSheet.tsx";
 
 
 const reportingBasisOptions: Array<{ value: ReportingBasisOption; label: string }> = [
@@ -48,45 +54,24 @@ export function B1BasisPreparation({
                 }
             />
 
+            <OmittedDisclosures
+                value={general.omittedDisclosures}
+                onChange={(value) =>
+                    updateGeneralInformation({omittedDisclosures: value as string})}
+            />
+
             <BasisForReporting
               value={general.basisForReporting}
               onChange={(value) =>
                   updateGeneralInformation({ basisForReporting: value as string})}
             />
+            <SizeOfBalanceSheet
+                 value={general.entityIdentifier} onChange={handleInputChange("entityIdentifier")}
+                 />
 
-          <SelectWithInfo
-            id="basisForReporting"
-            label="Berichtsgrundlage"
-            value={general.basisForReporting}
-            onValueChange={(value) =>
-              updateGeneralInformation({ basisForReporting: value as ReportingBasisOption })
-            }
-            options={reportingBasisOptions}
-            placeholder="Basis wählen"
-            infoTitle="Basis for reporting"
-            infoDescription="Wählen Sie, ob der Bericht konsolidierte Daten oder Einzelabschlussdaten enthält (Zeile 42)."
-          />
-        </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor="omittedDisclosures"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Ausgelassene Disclosures
-          </label>
-          <textarea
-            id="omittedDisclosures"
-            value={general.omittedDisclosures ?? ""}
-            onChange={handleInputChange("omittedDisclosures")}
-            rows={4}
-            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Optional: Liste der ausgelassenen Disclosures oder Begründungen"
-          />
-          <p className="text-sm text-muted-foreground">
-            Dokumentieren Sie ausgelassene oder vertrauliche Angaben (Zeile 33). Diese Information
-            unterstützt den Audit-Trail.
-          </p>
+
+
         </div>
       </CardContent>
     </Card>

@@ -4,7 +4,8 @@ public record ExcelUpdate(
         String datapointID,
         String excelNamedRange,
         String excelCell,
-        String value
+        String value,
+        boolean isNumber
 ) {
 }
 

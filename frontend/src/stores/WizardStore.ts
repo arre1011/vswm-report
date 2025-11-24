@@ -17,7 +17,8 @@ export interface GeneralInformationData {
   reportingPeriodEnd?: Date
   basisForPreparation: string
   basisForReporting: string
-  omittedDisclosures?: string
+  omittedDisclosures: string
+    sizeOfBalanceSheet:string
   turnover?: string
   employeeCount?: string
   employeeCountingMethod: EmployeeCountingMethod
@@ -96,6 +97,7 @@ const createInitialWizardData = (): WizardData => ({
     basisForPreparation: "",
     basisForReporting: "",
     omittedDisclosures: "",
+      sizeOfBalanceSheet: "",
     turnover: "",
     employeeCount: "",
     employeeCountingMethod: "",

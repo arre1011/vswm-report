@@ -19,7 +19,7 @@ export function BasisForReporting({value, onChange}: BasisForReportingProbs){
             value={value}
             onValueChange={onChange}
             options={basisForReportingOptions}
-            placeholder="Feld wählen"
+            placeholder="choose reportype"
             infoTitle="Basis for reporting (consolidated or individual basis)"
             infoDescription="Basis for reporting (consolidated or individual basis)"
         />

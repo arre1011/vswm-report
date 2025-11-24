@@ -114,7 +114,8 @@ public class ExcelUpdateService {
                             mapping.datapointID(),
                             mapping.excelNamedRange(),
                             mapping.excelCell(),
-                            value
+                            value,
+                            mapping.isNumber()
                     );
                 })
                 .filter(Objects::nonNull)

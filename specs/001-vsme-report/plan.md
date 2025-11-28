@@ -403,7 +403,7 @@ backend/src/main/kotlin/org/example/backend/
 
 ### Phase 4 Milestone
 ✅ **Complete user journey works**  
-✅ **VSME Reportcd data flows from frontend → backend → Excel**  
+✅ **VSME Report data flows from frontend → backend → Excel**  
 ✅ **Excel downloads successfully**  
 ✅ **Manual verification: Excel is correct**  
 ✅ **MVP ready for stakeholder demo**

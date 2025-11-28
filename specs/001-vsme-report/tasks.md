@@ -124,7 +124,7 @@ This task list breaks down the VSME Easy Report implementation into **20 actiona
 > I want **a clean Domain-Driven Design folder structure**  
 > So that **code is organized, maintainable, and follows the constitution**
 
-**Spec Reference**: [Constitution - Frontend Architecture](../../specs/001-vsme-report/constitution.md)
+**Spec Reference**: [Constitution - Frontend Architecture](../memory/constitution.md)
 
 **Acceptance Criteria**:
 - [ ] Folder structure created as per Constitution:
@@ -174,7 +174,7 @@ frontend/src/
 > I want **a clean Hexagonal Architecture structure**  
 > So that **domain logic is separated from infrastructure and code is testable**
 
-**Spec Reference**: [Constitution - Backend Architecture](../../specs/001-vsme-report/constitution.md)
+**Spec Reference**: [Constitution - Backend Architecture](../memory/constitution.md)
 
 **Acceptance Criteria**:
 - [ ] Folder structure created as per Constitution:
@@ -357,7 +357,7 @@ backend/src/main/kotlin/org/example/backend/
 > I want **existing form components integrated with the Zustand store**  
 > So that **they support auto-save, validation, and i18n out of the box**
 
-**Spec Reference**: [Constitution - Reusable Components](../../specs/001-vsme-report/constitution.md)
+**Spec Reference**: [Constitution - Reusable Components](../memory/constitution.md)
 
 **Acceptance Criteria**:
 - [ ] Enhanced `input-with-info.tsx`:
@@ -755,7 +755,7 @@ fun generateReport(request: ExcelExportRequest): ExcelExportResponse
 > I want **a REST API endpoint to trigger Excel export**  
 > So that **users can download their completed VSME report**
 
-**Spec Reference**: [Constitution - API Contract](../../specs/001-vsme-report/constitution.md)
+**Spec Reference**: [Constitution - API Contract](../memory/constitution.md)
 
 **Acceptance Criteria**:
 - [ ] Controller created: `backend/.../adapter/inbound/rest/VsmeExportController.kt`
@@ -806,7 +806,7 @@ fun generateReport(request: ExcelExportRequest): ExcelExportResponse
 > I want **an API client to call the backend export endpoint**  
 > So that **users can trigger Excel generation and download the file**
 
-**Spec Reference**: [Constitution - Tech Stack](../../specs/001-vsme-report/constitution.md)
+**Spec Reference**: [Constitution - Tech Stack](../memory/constitution.md)
 
 **Acceptance Criteria**:
 - [ ] API client created: `frontend/src/shared/services/vsme-api.ts`

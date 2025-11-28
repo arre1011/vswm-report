@@ -12,12 +12,6 @@ import {
 import {
     BasisForReporting
 } from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/BasisForReporting.tsx";
-import {
-    OmittedDisclosures
-} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/OmittedDisclosures.tsx";
-import {
-    SizeOfBalanceSheet
-} from "@/components/forms/general-information-form/disclosures/b1-basis-preparation/datapoints/SizeOfBalanceSheet.tsx";
 
 
 const reportingBasisOptions: Array<{ value: ReportingBasisOption; label: string }> = [
@@ -54,23 +48,11 @@ export function B1BasisPreparation({
                 }
             />
 
-            <OmittedDisclosures
-                value={general.omittedDisclosures}
-                onChange={(value) =>
-                    updateGeneralInformation({omittedDisclosures: value as string})}
-            />
-
             <BasisForReporting
               value={general.basisForReporting}
               onChange={(value) =>
                   updateGeneralInformation({ basisForReporting: value as string})}
             />
-            <SizeOfBalanceSheet
-                 value={general.entityIdentifier} onChange={handleInputChange("entityIdentifier")}
-                 />
-
-
-
 
         </div>
       </CardContent>

@@ -29,7 +29,6 @@ export function GeneralInformationForm() {
 
       <B1BasisPreparation
         general={general}
-        handleInputChange={handleInputChange}
         updateGeneralInformation={updateGeneralInformation}
       />
 
